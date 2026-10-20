@@ -1,0 +1,2534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>反诈演练 · 案例库与互动模式</title>
+<style>
+  :root{
+    --bg:#eef0f4; --panel:#ffffff; --line:#e3e6ec; --ink:#1b1f27; --muted:#5d6472;
+    --blue:#1a6dff; --blue-soft:#eaf1ff; --red:#d93025; --amber:#e08600; --green:#1e8e3e;
+    --wx-green:#07c160; --radius:14px; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 "PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px}
+  header h1{margin:0 0 6px;font-size:20px}
+  header p{margin:0 0 16px;font-size:13px;color:var(--muted)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+  .layout{display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start}
+  @media(max-width:940px){.layout{grid-template-columns:1fr}}
+
+  /* ============ 顶层路由 ============ */
+  .screen{display:none}
+  .screen.on{display:block}
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .backlink{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);
+    background:var(--panel);color:var(--ink);border-radius:99px;padding:7px 14px;
+    font:inherit;font-size:13px;cursor:pointer}
+  .backlink:hover{border-color:var(--blue);color:var(--blue)}
+
+  /* ============ 首页 ============ */
+  .hero{padding:34px 30px;border-radius:20px;margin-bottom:18px;
+    background:linear-gradient(135deg,#1a3a8f 0%,#1a6dff 52%,#4f9bff 100%);color:#fff;
+    box-shadow:0 12px 32px rgba(26,109,255,.22)}
+  .hero h2{margin:0 0 8px;font-size:26px;letter-spacing:.5px}
+  .hero p{margin:0;opacity:.92;font-size:14px;max-width:640px}
+  .hero .stats{display:flex;gap:26px;margin-top:20px;flex-wrap:wrap}
+  .hero .stat b{display:block;font-size:22px;line-height:1.2}
+  .hero .stat span{font-size:12px;opacity:.85}
+
+  .entries{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+  @media(max-width:760px){.entries{grid-template-columns:1fr}}
+  .entry{position:relative;border:1px solid var(--line);border-radius:18px;padding:26px 24px;
+    background:var(--panel);cursor:pointer;transition:.18s;overflow:hidden;text-align:left;
+    font:inherit;color:inherit;box-shadow:var(--shadow);display:block;width:100%}
+  .entry::after{content:'';position:absolute;inset:0;border-radius:18px;pointer-events:none;
+    background:linear-gradient(135deg,rgba(26,109,255,.05),transparent 55%);opacity:0;transition:.18s}
+  .entry:hover{transform:translateY(-3px);border-color:var(--blue);box-shadow:0 12px 28px rgba(16,24,40,.1)}
+  .entry:hover::after{opacity:1}
+  .entry .badge{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;margin-bottom:14px;background:var(--blue-soft)}
+  .entry h3{margin:0 0 8px;font-size:18px}
+  .entry p{margin:0 0 14px;font-size:13.5px;color:var(--muted);line-height:1.7}
+  .entry ul{margin:0;padding-left:18px;font-size:12.5px;color:var(--muted);line-height:1.9}
+  .entry .go{position:absolute;right:22px;bottom:20px;color:var(--blue);font-size:13px;font-weight:600}
+
+  /* ============ 案例库 ============ */
+  .lib-head{margin-bottom:14px}
+  .lib-head h2{margin:0 0 4px;font-size:19px}
+  .lib-head p{margin:0;font-size:13px;color:var(--muted)}
+  .searchbar{position:relative;margin-bottom:14px}
+  .searchbar input{width:100%;padding:12px 40px 12px 40px;border:1px solid var(--line);
+    border-radius:12px;font:inherit;font-size:14px;background:var(--panel)}
+  .searchbar input:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,109,255,.12)}
+  .searchbar .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px}
+  .searchbar .clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;
+    background:#eceef2;color:var(--muted);border-radius:50%;width:22px;height:22px;cursor:pointer;
+    font-size:13px;line-height:1;display:none}
+  .searchbar .clear.on{display:block}
+
+  .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+  /* 分类卡片的宽高内容为 flex 布局，避免 grid 尺寸塌陷 */
+  .cat{min-width:0}
+  .cat{border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:var(--panel);
+    cursor:pointer;transition:.15s;text-align:left;font:inherit;color:inherit}
+  .cat:hover{border-color:var(--blue);transform:translateY(-2px)}
+  .cat.on{background:var(--blue-soft);border-color:var(--blue)}
+  .cat .top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .cat .ico{font-size:17px}
+  .cat .nm{font-size:14px;font-weight:600}
+  .cat .n{font-size:11.5px;color:var(--muted)}
+  .cat .high{color:var(--red);font-weight:600}
+  .cat .blurb{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:5px}
+
+  .cases{display:grid;gap:12px;margin-top:14px}
+  .case{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+  .case-head{width:100%;border:0;background:transparent;padding:15px 16px;cursor:pointer;
+    text-align:left;font:inherit;color:inherit;display:block}
+  .case-head:hover{background:#fafbfc}
+  .case .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:7px}
+  .chip{font-size:11.5px;padding:2px 8px;border-radius:6px;background:#f1f3f6;color:var(--muted)}
+  .chip.cattag{background:var(--blue-soft);color:var(--blue)}
+  .chip.sev{background:#fdecea;color:var(--red)}
+  .chip.sev.中高危{background:#fff4e5;color:var(--amber)}
+  .chip.sev.中危{background:#fff9db;color:#a16207}
+  .chip.sev.低危{background:#e6f4ea;color:var(--green)}
+  .case h4{margin:0 0 6px;font-size:15.5px;line-height:1.5}
+  .case .sum{margin:0;font-size:13px;color:var(--muted);line-height:1.7}
+  .case .chev{color:var(--muted);font-size:12px;transition:.2s;display:inline-block;margin-top:8px}
+  .case.open .chev{transform:rotate(180deg)}
+  .case-body{display:none;padding:0 16px 16px;border-top:1px dashed var(--line);margin-top:12px}
+  .case.open .case-body{display:block}
+  .blk{margin-top:14px}
+  .blk h5{margin:0 0 7px;font-size:13.5px;display:flex;align-items:center;gap:6px}
+  .blk ol,.blk ul{margin:0;padding-left:20px;font-size:13.5px;line-height:1.85;color:#333}
+  .blk.say li{color:#8a4b00}
+  .blk.say h5{color:#a16207}
+  .blk.crack h5{color:var(--red)} .blk.crack li{color:#7a2620}
+  .blk.act h5{color:var(--green)} .blk.act li{color:#1c5c33}
+  .quote{background:#fffaf0;border-left:3px solid #f0b429;padding:8px 12px;border-radius:0 8px 8px 0;
+    margin:6px 0;font-size:13.5px;color:#7a4a00}
+  .tags{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
+  .tag-s{font-size:11.5px;color:var(--muted);background:#f1f3f6;border-radius:6px;padding:2px 8px}
+
+  .empty{text-align:center;padding:44px 20px;color:var(--muted)}
+  .empty .big{font-size:34px;margin-bottom:10px}
+  .pager{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:18px;flex-wrap:wrap}
+  .pager button{border:1px solid var(--line);background:var(--panel);border-radius:9px;
+    padding:7px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+  .pager button:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+  .pager button:disabled{opacity:.4;cursor:not-allowed}
+  .pager .pg{min-width:32px;text-align:center;font-size:13px;padding:7px 8px;border-radius:9px;
+    border:1px solid transparent;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit}
+  .pager .pg.on{background:var(--blue);color:#fff}
+  .result-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    flex-wrap:wrap;margin-top:16px;font-size:13px;color:var(--muted)}
+  .crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+  .crumb b{color:var(--ink)}
+  @media(max-width:640px){
+    .wrap{padding:14px}
+    .hero{padding:24px 20px}
+    .hero h2{font-size:21px}
+    .cats{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+    .case .meta{gap:6px}
+    /* 手机外壳改为撑满可用宽度，避免固定 390px 在窄屏溢出 */
+    .phone{width:100%;max-width:414px;height:auto;aspect-ratio:390/800;padding:10px;
+      border-radius:36px}
+    .screen-phone{border-radius:28px}
+    .notch{width:34%;height:22px}
+    .statusbar{height:38px}
+    .wx-head{height:86px;padding-top:38px}
+    /* 侧栏与手机不再并排，改纵向堆叠 */
+    .row2{grid-template-columns:1fr}
+  }
+
+  /* ============ 手机外壳 ============ */
+  .phone{width:390px;height:800px;margin:0 auto;background:#111;border-radius:44px;
+    padding:12px;box-shadow:0 24px 60px rgba(16,24,40,.22),0 0 0 2px #2a2f3a;position:relative}
+  .screen-phone{width:100%;height:100%;background:#000;border-radius:34px;overflow:hidden;position:relative}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;
+    background:#000;border-radius:0 0 18px 18px;z-index:99}
+  .statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:12px;color:#fff;position:absolute;top:0;left:0;right:0;z-index:98;
+    pointer-events:none;font-weight:600}
+  .view{position:absolute;inset:0;display:none;flex-direction:column;background:#fff}
+  .view.on{display:flex}
+
+  /* ============ 桌面 ============ */
+  .home{background:linear-gradient(160deg,#5b7cfa 0%,#8e6ef5 40%,#f093a8 100%)}
+  .home-top{padding:52px 22px 8px;color:#fff}
+  .home-top h2{margin:0;font-size:22px}
+  .home-top p{margin:4px 0 0;font-size:12px;opacity:.85}
+  .apps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;padding:20px 14px}
+  .app{text-align:center;color:#fff;font-size:11px;cursor:default}
+  .app .ico{width:56px;height:56px;border-radius:14px;margin:0 auto 6px;display:flex;
+    align-items:center;justify-content:center;font-size:26px;background:rgba(255,255,255,.2)}
+  .app.wechat .ico{background:linear-gradient(160deg,#4ade80,#07c160)}
+  .app.dim{opacity:.55}
+  .home-hint{margin:auto 16px 16px;background:rgba(255,255,255,.16);backdrop-filter:blur(6px);
+    color:#fff;border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.6}
+  .homebar{height:22px;display:flex;align-items:center;justify-content:center}
+  .homebar i{width:130px;height:5px;border-radius:99px;background:currentColor;opacity:.35;display:block}
+
+  /* ============ 微信 ============ */
+  .wx-head{height:92px;padding-top:44px;background:#ededed;border-bottom:.5px solid #d9d9d9;
+    display:flex;align-items:center;padding-left:14px;font-size:16px;font-weight:600;flex:0 0 auto}
+  .wx-head .back{width:22px;font-size:20px;margin-right:6px;cursor:pointer;color:#333}
+  .wx-body{flex:1;overflow-y:auto;background:#ededed}
+  .chats .row{display:flex;gap:12px;padding:12px 14px;align-items:center;cursor:pointer;
+    border-bottom:.5px solid #e3e3e3;background:#fff}
+  .chats .row:active{background:#d9d9d9}
+  .ava{width:46px;height:46px;border-radius:6px;flex:0 0 auto;display:flex;align-items:center;
+    justify-content:center;color:#fff;font-size:19px;font-weight:500}
+  .chats .meta{flex:1;min-width:0}
+  .chats .n{font-size:15px;margin-bottom:2px;display:flex;justify-content:space-between}
+  .chats .t{font-size:12.5px;color:#8c8c8c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .badge{background:var(--red);color:#fff;font-size:11px;border-radius:99px;padding:0 6px;height:17px;
+    line-height:17px;min-width:17px;text-align:center}
+  .wx-foot{height:56px;padding:8px 10px;background:#f7f7f7;border-top:.5px solid #d9d9d9;
+    display:flex;gap:8px;align-items:center;flex:0 0 auto}
+  .wx-foot input{flex:1;padding:9px 11px;border:0;border-radius:6px;background:#fff;font:inherit;font-size:14px}
+  .wx-foot .send{background:var(--wx-green);color:#fff;border:0;border-radius:6px;padding:9px 14px;
+    font:inherit;font-size:14px;cursor:pointer}
+  .wx-foot .blk{background:#fff;border:1px solid #d0d0d0;border-radius:6px;padding:9px 12px;
+    font:inherit;font-size:13px;cursor:pointer;color:#555}
+
+  /* 聊天气泡 */
+  .msgs{padding:14px 12px 20px;display:flex;flex-direction:column;gap:14px}
+  .sys{align-self:center;background:rgba(0,0,0,.06);color:#666;font-size:11.5px;padding:4px 10px;
+    border-radius:5px;max-width:88%;text-align:center}
+  .sys.link{background:#fff;border:1px solid #e0e0e0;color:#333}
+  .msg{display:flex;gap:8px;max-width:82%;align-items:flex-start}
+  .msg .bubble{background:#fff;padding:9px 12px;border-radius:5px;font-size:14.5px;
+    white-space:pre-wrap;line-height:1.55;word-break:break-word;box-shadow:0 1px 1px rgba(0,0,0,.04)}
+  .msg .ava{width:38px;height:38px;font-size:16px;border-radius:5px}
+  .msg.me{align-self:flex-end;flex-direction:row-reverse}
+  .msg.me .bubble{background:#95ec69}
+  .stage{align-self:center;font-size:11px;color:#999;background:rgba(0,0,0,.04);padding:3px 9px;border-radius:99px}
+  .typing{align-self:flex-start;display:flex;gap:8px;align-items:flex-end}
+  .typing .bubble{color:#888;font-style:italic}
+
+  /* 侧栏 */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;transition:.15s;background:#fff}
+  .card:hover{border-color:var(--blue);transform:translateY(-2px)}
+  .card.sel{border-color:var(--blue);background:var(--blue-soft)}
+  .card .top{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+  .card h3{margin:0;font-size:14.5px}
+  .card .lv{font-size:11.5px;color:var(--red);font-weight:600;display:block;margin-bottom:4px}
+  .card p{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+  .side h3{margin:0 0 10px;font-size:15px}
+  .kv{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .meter{height:8px;background:#e8eaef;border-radius:99px;overflow:hidden}
+  .meter i{display:block;height:100%;transition:.3s}
+  .alert{border-radius:10px;padding:9px 12px;font-size:12.5px;margin:8px 0}
+  .alert.danger{background:#fdecea;color:var(--red);border:1px solid #f5c6c2}
+  .alert.warn{background:#fff6e5;color:var(--amber);border:1px solid #ffe0a3}
+  .tag{display:inline-block;background:#fdecea;color:var(--red);border-radius:6px;padding:2px 8px;
+    font-size:12px;margin:0 6px 6px 0}
+  button.primary{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:10px 16px;
+    font:inherit;font-size:14px;cursor:pointer}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+  th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600}
+  ul.rf{margin:6px 0 0;padding-left:20px}
+  ul.rf li{margin-bottom:4px}
+  details summary{cursor:pointer;font-size:13px;padding:6px 0}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .report h2{margin:0 0 6px;font-size:17px}
+  /* 设置面板 */
+  .switch-row{margin-bottom:8px}
+  .switch{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px}
+  .switch input{display:none}
+  .track{width:38px;height:22px;border-radius:99px;background:#d0d4dc;position:relative;
+    transition:.2s;flex:0 0 auto}
+  .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+    background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .switch input:checked + .track{background:var(--green)}
+  .switch input:checked + .track .knob{left:18px}
+  .switch-label{font-weight:500}
+  .fld{display:block;margin-bottom:8px}
+  .fld span{display:block;font-size:11.5px;color:var(--muted);margin-bottom:3px}
+  .fld input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    font:inherit;font-size:13px;background:#fafbfc}
+  .fld input:focus{outline:0;border-color:var(--blue);background:#fff}
+  .row2{display:grid;grid-template-columns:1fr 100px;gap:8px}
+  .btn-row{display:flex;gap:8px;margin-top:4px}
+  button.ghost{background:#eef0f4;color:var(--ink);border:0;border-radius:8px;
+    padding:8px 12px;font:inherit;font-size:13px;cursor:pointer}
+  button.ghost.sm{padding:7px 12px;font-size:12.5px}
+  #aiFields.off{display:none}
+  #aiStatus.ok{color:var(--green)} #aiStatus.err{color:var(--red)}
+  .engine-tag{font-size:11.5px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ══════════ 屏幕一：首页 ══════════ -->
+<section class="screen on" id="s-home">
+  <div class="hero">
+    <h2>反诈意识训练</h2>
+    <p>看懂骗局，才谈得上避开它。这里提供两条路径：先在案例库里把常见手法认熟，
+       再到互动模式里亲自和骗子过招。</p>
+    <div class="stats" id="heroStats"></div>
+  </div>
+
+  <div class="entries">
+    <button class="entry" id="goLibrary">
+      <div class="badge">📚</div>
+      <h3>诈骗案例库</h3>
+      <p>按类型查阅真实手法的拆解：它怎么运作、话术长什么样、破绽在哪、遇到了怎么办。</p>
+      <ul>
+        <li>10 大类诈骗类型，覆盖公检法、投资、客服、贷款、杀猪盘等</li>
+        <li>全文关键词搜索，跨分类直接命中</li>
+        <li>每条案例含手法拆解 · 典型话术 · 破绽识别 · 处置建议</li>
+      </ul>
+      <span class="go">进入 →</span>
+    </button>
+
+    <button class="entry" id="goDrill">
+      <div class="badge">💬</div>
+      <h3>互动模式</h3>
+      <p>模拟一部手机，在微信里和那个「好友」聊天。他会按剧本分阶段推进，你以受骗者身份回话。</p>
+      <ul>
+        <li>4 个剧本：冒充公检法、虚假投资、冒充客服、刷单兼职</li>
+        <li>规则引擎实时计算风险指数，识破破绽才算过关</li>
+        <li>可选接入 AI，让对话方按人设现场生成话术</li>
+      </ul>
+      <span class="go">进入 →</span>
+    </button>
+  </div>
+</section>
+
+<!-- ══════════ 屏幕二：案例库 ══════════ -->
+<section class="screen" id="s-library">
+  <div class="topbar">
+    <button class="backlink" id="libBack">‹ 返回首页</button>
+  </div>
+
+  <div class="panel lib-head">
+    <h2>诈骗案例库</h2>
+    <p>收录目的是让你<b>认出</b>骗局，不是教你实施。每条案例都写清破绽在哪、遇到了怎么办。</p>
+  </div>
+
+  <div class="panel">
+    <!-- 搜索栏：始终作用于全库，不受下方分类筛选影响 -->
+    <div class="searchbar">
+      <span class="ico">🔍</span>
+      <input type="text" id="libSearch" placeholder="搜索案例关键词，如：安全账户、验证码、刷单、涨粉…" />
+      <button class="clear" id="libSearchClear" title="清空">✕</button>
+    </div>
+
+    <div class="result-bar">
+      <div class="crumb" id="libCrumb"></div>
+      <div id="libCount"></div>
+    </div>
+
+    <div class="cats" id="libCats" style="margin-top:14px"></div>
+    <div class="cases" id="libCases"></div>
+    <div class="pager" id="libPager"></div>
+  </div>
+</section>
+
+<!-- ══════════ 屏幕三：互动模式（原样保留） ══════════ -->
+<section class="screen" id="s-drill">
+  <div class="topbar">
+    <button class="backlink" id="drillBack">‹ 返回首页</button>
+  </div>
+
+  <header>
+    <h1>互动模式 · 微信里的诈骗好友</h1>
+    <p>模拟手机界面 → 打开微信 → 和那个「好友」聊天。他就是诈骗方。全程为教学演练，不涉及任何真实资金与个人信息。</p>
+  </header>
+
+  <div class="layout">
+    <!-- 手机 -->
+    <div class="phone">
+      <div class="screen-phone">
+        <div class="notch"></div>
+        <div class="statusbar" id="statusbar"><span id="clock">20:51</span><span>●●● ⌁ ▮</span></div>
+
+        <!-- 桌面 -->
+        <div class="view home on" id="v-home">
+          <div class="home-top"><h2>演练模式</h2><p>先选择剧本，再进入微信</p></div>
+          <div class="apps">
+            <div class="app wechat" id="app-wechat"><div class="ico">💬</div>微信</div>
+            <div class="app dim"><div class="ico">📷</div>相机</div>
+            <div class="app dim"><div class="ico">🧭</div>浏览器</div>
+            <div class="app dim"><div class="ico">⚙️</div>设置</div>
+            <div class="app dim"><div class="ico">📷</div>相册</div>
+            <div class="app dim"><div class="ico">🗓️</div>日历</div>
+            <div class="app dim"><div class="ico">💳</div>支付</div>
+            <div class="app dim"><div class="ico">📮</div>邮件</div>
+          </div>
+          <div class="home-hint" id="homeHint">在右侧选一个诈骗剧本，然后点「微信」图标开始。</div>
+          <div class="homebar" style="color:#fff"><i></i></div>
+        </div>
+
+        <!-- 微信 聊天列表 -->
+        <div class="view" id="v-list">
+          <div class="wx-head">微信</div>
+          <div class="wx-body chats" id="chatList"></div>
+          <div class="wx-foot"><input id="searchInput" placeholder="搜索" disabled /><button class="send" disabled>+</button></div>
+        </div>
+
+        <!-- 微信 聊天窗口 -->
+        <div class="view" id="v-chat">
+          <div class="wx-head"><span class="back" id="backBtn">‹</span><span id="peerName">好友</span></div>
+          <div class="wx-body" id="msgScroll"><div class="msgs" id="msgs"></div></div>
+          <div class="wx-foot">
+            <input id="userInput" placeholder="发消息…" />
+            <button class="blk" id="blockBtn">拉黑</button>
+            <button class="send" id="sendBtn">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 侧栏 -->
+    <div>
+      <section class="panel side" id="picker">
+        <h3>1 · 选择诈骗剧本</h3>
+        <div class="cards" id="cards"></div>
+        <div style="margin-top:14px"><button class="primary" id="startBtn">生成微信好友</button></div>
+        <div class="hint">生成后点手机里的「微信」图标，进入聊天。</div>
+      </section>
+
+      <section class="panel side" id="settings">
+        <h3>设置 · AI 对话引擎</h3>
+        <div class="switch-row">
+          <label class="switch">
+            <input type="checkbox" id="aiEnabled" />
+            <span class="track"><span class="knob"></span></span>
+            <span class="switch-label">启用 AI 生成话术</span>
+          </label>
+        </div>
+        <div class="hint" style="margin:0 0 10px">
+          关闭时使用内置知识库话术（离线可用）。启用后由 AI 按人设现场生成，
+          剧情走向与风险评分仍由规则引擎决定，不受模型影响。
+        </div>
+        <div id="aiFields">
+          <label class="fld"><span>接口地址 Base URL</span>
+            <input type="text" id="aiBase" placeholder="https://api.openai.com/v1" /></label>
+          <label class="fld"><span>API Key</span>
+            <input type="password" id="aiKey" placeholder="sk-..." /></label>
+          <div class="row2">
+            <label class="fld"><span>模型</span>
+              <input type="text" id="aiModel" placeholder="gpt-4o-mini" /></label>
+            <label class="fld"><span>温度 0-2</span>
+              <input type="text" id="aiTemp" placeholder="0.9" /></label>
+          </div>
+          <div class="btn-row">
+            <button class="ghost sm" id="aiTest">测试连接</button>
+            <button class="ghost sm" id="aiClear">清空</button>
+          </div>
+          <div class="hint" id="aiStatus">配置存在本机浏览器，不会上传到除你填写的接口地址外的任何地方。</div>
+        </div>
+      </section>
+
+      <section class="panel side" id="monitor" style="display:none">
+        <h3>实时监控</h3>
+        <div class="kv"><span>对方身份</span><span id="mPeer" style="color:var(--ink);font-weight:600"></span></div>
+        <div class="kv"><span>当前阶段</span><span id="mStage" style="color:var(--ink)"></span></div>
+        <div class="kv"><span>对话引擎</span><span id="mEngine" style="color:var(--ink)">内置知识库话术</span></div>
+        <div class="kv"><span>风险指数</span><span id="mScore">0</span></div>
+        <div class="meter"><i id="mBar" style="width:0%;background:var(--green)"></i></div>
+        <div id="alertBox"></div>
+        <div class="hint">想提前结束：在聊天框输入「我要报警」，或点「拉黑」，然后在下方报告里查看复盘。</div>
+        <button class="primary" id="reportBtn" style="width:100%;margin-top:12px;display:none">生成复盘报告</button>
+      </section>
+
+      <section class="panel report" id="reportBox" style="display:none"></section>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+
+/* ===== kb/scenarios.js ===== */
+/**
+ * 反诈模拟演练 · 知识库（教学用途）
+ * ---------------------------------------------------------------
+ * 场景设定：手机里的微信好友就是诈骗方。你在聊天框里以受骗者身份回话。
+ *
+ * 设计约束（硬性）：
+ * 1. 所有话术中的账号、卡号、链接、联系方式一律使用占位符，不含任何真实可用的收款信息。
+ * 2. 每个阶段都配有 `redFlags`：该阶段真实诈骗中会出现的破绽，用于给「受骗者」提示与复盘。
+ * 3. `lines` 按微信聊天口吻写，短句分行，贴近真实聊天节奏。
+ * 4. 本文件仅用于识别与防范训练，禁止改写为面向真实受害者的操作指南。
+ */
+
+/** 敏感信息脱敏：把疑似真实卡号/手机号/链接替换为占位符（纯函数，D8） */
+const PLACEHOLDER_CARD = '［卡号已脱敏］';
+const PLACEHOLDER_PHONE = '［手机号已脱敏］';
+const PLACEHOLDER_URL = '［链接已屏蔽］';
+
+const RE_CARD = /\b\d[\d\s-]{13,21}\d\b/g;
+const RE_PHONE = /\b1[3-9]\d{9}\b/g;
+const RE_URL = /\b(?:https?:\/\/|www\.)[^\s，。！？]+/gi;
+
+/** @param {string} text @returns {string} */
+function sanitize(text) {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(RE_CARD, PLACEHOLDER_CARD)
+    .replace(RE_PHONE, PLACEHOLDER_PHONE)
+    .replace(RE_URL, PLACEHOLDER_URL);
+}
+
+/**
+ * @typedef {Object} Stage
+ * @property {string} id
+ * @property {string} name          阶段名
+ * @property {string} goal          该阶段诈骗方想拿什么
+ * @property {string[]} lines       诈骗方话术池（脱敏后输出）
+ * @property {string[]} pressure    施压话术（受骗者质疑时追加）
+ * @property {string[]} redFlags    本阶段破绽提示（复盘用）
+ * @property {string} advice        本阶段防范建议
+ * @property {string} [systemMsg]   伴随的「系统提示」，如对方发来链接
+ */
+
+/** @type {Record<string, any>} */
+const SCENARIOS = {
+  police: {
+    id: 'police',
+    title: '冒充公检法「资金清查」',
+    level: '高危',
+    contact: {
+      nickname: '陈警官',
+      avatar: '警',
+      avatarBg: '#2b5fd9',
+      source: '朋友推荐的「警官」，昨天主动加了你微信',
+      lastMsg: '方便的话现在回我一下电话，我在核查一个案子',
+      unread: 2,
+    },
+    intro:
+      '微信好友列表里躺着一个昨天主动加你的「陈警官」。他自称市局反诈中心的民警，' +
+      '说你名下银行卡涉嫌转移诈骗资金，要求你配合「资金清查」，并强调不要告诉家人。',
+    persona: '自称 XX市公安局反诈中心 陈警官（语气专业、态度强硬、连发短消息施压）',
+    background:
+      '冒充公检法是「国家背书型」诈骗的核心手法：利用群众对公权力的敬畏，' +
+      '制造「我是在保护你」的错觉，让受害者主动配合转入所谓安全账户。',
+    stages: [
+      {
+        id: 'hook',
+        name: '一、建立权威与恐惧',
+        goal: '让你相信对方是公检法，且你已卷入案件',
+        lines: [
+          '您好，我是市局反诈中心 陈静，工号 0X7X2。\n系统检测到您尾号 3321 的银行卡，涉嫌转移诈骗资金 87 万。',
+          '这不是普通的资金往来，是专案。\n上面已经批了搜查令，您现在是协查对象。',
+          '按规定，核查期间不能告诉任何家属。\n这叫保密纪律，泄露会导致案件扩大。',
+        ],
+        pressure: [
+          '我理解您觉得突然。\n但这个案子今晚就要移交审查，您配合一下，两小时就能结束。',
+          '您要是拒绝，我只能按规定通知您单位了，这也是流程。',
+        ],
+        redFlags: [
+          '公检法办案绝不会通过微信/电话+网络视频进行，绝不会要求你「转到安全账户」。',
+          '真警察不会让你保密到「连家人都不能说」——这是怕你被身边人劝阻。',
+          '主动加你微信的「警察」，99% 是假的。可自己拨打 12395（全国公安反诈专线）核实。',
+        ],
+        advice: '不按对方给的任何方式核实。挂断后自己拨 96110 / 110 核实身份。',
+        systemMsg: '陈警官 请求添加你为好友',
+      },
+      {
+        id: 'channel',
+        name: '二、转移到「安全渠道」',
+        goal: '把你从微信拉进更可控的「官方」工具，建立单一可信通道',
+        lines: [
+          '您电脑上是不是装了腾讯会议？\n我们走官方加密通道，文字记录要留档，比微信安全。',
+          '这样，我给您发一个「资金清查专用APP」。\n这是官方研发的，应用商店搜不到，我发链接给您。',
+          'APP 是内网专用，外面下载不到。\n必须通过链接下载，这是保密要求。',
+        ],
+        pressure: [
+          '不上APP我没法出笔录，这案子就卡在您这儿了。',
+          '这是流程要求，我个人也是按规定办事，您别让我为难。',
+        ],
+        redFlags: [
+          '要求下载应用商店里搜不到的 APP、要求屏幕共享，都是诈骗标准动作。',
+          '「安全账户」「资金清查APP」在国内任何正规金融/公检法体系中都不存在。',
+          '涉及资金核查的正规流程，公安会在派出所当面进行。',
+        ],
+        advice: '任何要求你卸载主流软件、改用小众加密通讯软件的都是高危信号。',
+        systemMsg: '陈警官 发送了一个链接：资金清查专用.apk',
+      },
+      {
+        id: 'money',
+        name: '三、诱导资金「验证」',
+        goal: '让你把资金转入指定账户，并制造「钱会自动回来」的错觉',
+        lines: [
+          '清查需要您把账户余额转入「安全账户」验证。\n验证完原路退回，一分不少，这是国家财政专户。',
+          '您卡里有 12 万对吧？\n请分三笔转到我发的三个「技术核验」账户，这是反洗钱流程的强制要求。',
+          '注意别告诉银行柜员，他们可能泄露您的隐私。\n这是我们内部提示，一般不告诉人。',
+        ],
+        pressure: [
+          '您的涉案金额越大，越要配合。\n拖得越久，越像心虚。',
+          '现在给您三分钟考虑。\n三分钟后系统自动锁定您的账户，那就不是清查，是冻结。',
+        ],
+        redFlags: [
+          '「转到安全账户后原路退回」——所有正规机构都没有这种账户，银行流水可查证。',
+          '要求你瞒着银行、瞒着家人。',
+          '以「资金清查」名义要求转账，是被公安部明令禁止的诈骗话术。',
+        ],
+        advice: '凡要求转账，一律终止。钱一旦离手，追回概率极低。',
+      },
+      {
+        id: 'close',
+        name: '四、威胁与收尾',
+        goal: '施压到你就范，或在拖延后「注销案件」制造错觉',
+        lines: [
+          '您考虑好了吗？\n我再给您最后一次机会，再不配合，视您为畏罪潜逃，发布通缉。',
+          '算了，既然您不配合，我先帮您注销案件。\n但信息已经上报，接下来会有其他部门联系您。',
+          '您先别报警，也不要告诉任何人。\n这件事处理不好，影响的不止您一个。',
+        ],
+        pressure: ['十分钟内不操作，系统默认您放弃申诉，直接进入冻结程序。'],
+        redFlags: [
+          '「注销案件但信息已上报」——制造「逃不掉」的二次恐惧，让你去借高利贷继续转账。',
+          '威胁「影响三代」是纯粹的施压手段，没有任何法律依据。',
+          '真正的执法有固定文书和时限，不会用「十分钟」倒计时。',
+        ],
+        advice: '对方越催你越要停。倒计时是施压，不是流程。',
+      },
+    ],
+  },
+
+  invest: {
+    id: 'invest',
+    title: '虚假投资理财「导师」',
+    level: '中高危',
+    contact: {
+      nickname: '陈老师-不贪',
+      avatar: '陈',
+      avatarBg: '#c2410c',
+      source: '投资交流群里认识的「老师」，昨天单独加你微信',
+      lastMsg: '在吗？之前群里说的那只票，我这边有个进场点',
+      unread: 5,
+    },
+    intro:
+      '微信好友列表里有一个投资交流群里的「陈老师」。他自称持证分析师，' +
+      '群友天天晒盈利截图，他把你拉进一个小群，说带你做「内部渠道」。',
+    persona: '微信昵称「陈老师-不贪」（语气温和、专业、爱发截图）',
+    background:
+      '虚假投资类诈骗是「小额获利 + 加大投入 + 无法出金」的三段式：先让你尝到甜头，再锁死你的钱。',
+    stages: [
+      {
+        id: 'trust',
+        name: '一、建立信任与「战绩」',
+        goal: '让你相信他专业且有内幕',
+        lines: [
+          '您好，我是持证分析师，从业 12 年。\n这两天大盘不好，但有个内部标的机会，我先带您试一把。',
+          '这是我们群学员昨天的收益截图，您看看。\n一个月 20% 很稳定吧？我不收费，只收盈利分成。',
+          '您可以先投 500 试试。\n盈了我抽成，亏了算我的——这是规矩，也是信任。',
+        ],
+        pressure: [
+          '机会只有两天，过了这一波大盘就涨上去了。',
+          '别人都上车了，就等您一个。',
+        ],
+        redFlags: [
+          '微信里「带单老师」没有任何资质可查，收益截图可伪造。',
+          '「亏了算我的、盈利分成」是最经典的诱饵，目的是让你先动第一笔。',
+        ],
+        advice: '任何在非持牌机构、非正规 App 上操作的「老师」，一律按诈骗处理。',
+        systemMsg: '陈老师-不贪 邀请你加入群聊：内部交流·勿外传（37人）',
+      },
+      {
+        id: 'deposit',
+        name: '二、小额获利，加大投入',
+        goal: '让你第一次真金白银入场并小赚',
+        lines: [
+          '您看，2000 块已经到账 2450 了，对吧？\n这只是试水，真做的话建议 5 万起。',
+          '平台是境内的，营业执照我都发您。\n您也可以自己去企业信息查询网查。',
+          '这次是行情末期，最后一波。\n我建议您加到 10 万，我陪您做一波大的。',
+        ],
+        pressure: ['我从不逼人，您自己决定。\n不过错过这一波，下一次可能要等三个月。'],
+        redFlags: [
+          '盈利无法提现是核心疑点：先让你「看到钱」，钱只是账户数字，不是可用余额。',
+          '第三方网站查不到实际运营主体，说明资金不在正规监管体系内。',
+        ],
+        advice: '正规证券、期货投资必须在持牌机构 App 开户，资金进第三方支付或个人账户即为高危。',
+      },
+      {
+        id: 'trap',
+        name: '三、制造「无法提现」',
+        goal: '锁死资金，让你不断追加「解冻费」',
+        lines: [
+          '您提现的时候系统提示异常，需要缴 20% 保证金才能解冻。',
+          '这是银监会的规定，不交就被判定洗钱，您自己账户也会被冻结。',
+          '再交 8 万就能一起放出来。\n您别在这个时候掉链子啊。',
+        ],
+        pressure: [
+          '我做了这么多年没骗过人，您看着办。',
+          '今天不交，明天平台关闭，您连本金都拿不回来。',
+        ],
+        redFlags: [
+          '「提现要交保证金」——所有正规投资平台提现都是免费的，这是诈骗的收网标志。',
+          '「不解冻就判洗钱」是利用你怕被冻结的恐惧，让你继续投钱。',
+          '此时骗局已进入尾声，投进去的钱一分不会回来。',
+        ],
+        advice: '提现受阻的第一反应是找平台官方客服（自己从官网查），而不是找推荐人。',
+        systemMsg: '陈老师-不贪：您直接点这个入口出金更快 → 链接已屏蔽',
+      },
+      {
+        id: 'pressure',
+        name: '四、心理战与跑路',
+        goal: '让你觉得「再交最后一次就能回本」',
+        lines: [
+          '您只要再凑 3 万，我这边就帮您把之前的申请撤回来。',
+          '我微信号明天就换了，您抓紧。\n之前有学员就是这么拖着错过了。',
+          '您要是今天不解决，我就把群解散，各管各的。',
+        ],
+        pressure: ['最后一次，真的最后一次。'],
+        redFlags: [
+          '「微信号明天就换」「群要解散」是典型跑路倒计时。',
+          '沉没成本陷阱：投入越多越难放手，是骗子主动设计的心理机制。',
+        ],
+        advice: '已经被骗立刻报警并联系银行止付，越早越有机会拦下。',
+      },
+    ],
+  },
+
+  refund: {
+    id: 'refund',
+    title: '冒充客服「全额理赔」',
+    level: '中危',
+    contact: {
+      nickname: '平台客服 0987',
+      avatar: '客',
+      avatarBg: '#0f9d58',
+      source: '自称官方客服，主动加你微信',
+      lastMsg: '您好，您的商品售后还在处理中，请尽快确认',
+      unread: 1,
+    },
+    intro:
+      '微信里躺着一个自称平台官方客服的好友（0987 号）。' +
+      '对方能准确说出你三个月前的订单，说商品有质量问题，可以「全额退款 + 300 元赔付」。',
+    persona: '自称平台官方客服 0987 号（态度热情、流程熟练、发消息很快）',
+    background:
+      '冒充客服类是高频骗局，利用真实订单信息制造真实感。这一类里最狠的是「先退款」变「先垫付」。',
+    stages: [
+      {
+        id: 'verify',
+        name: '一、用真实信息制造真实感',
+        goal: '打消你的怀疑',
+        lines: [
+          '您好，请问是 138****6621 的用户吗？\n您 3 月 12 日购买的订单，商品出现批量质量问题。',
+          '您看，这是您的订单号和购买记录。\n和您信息对得上吧？我能查到才加的您微信。',
+          '系统给您办理「全额退款 + 300 元补偿金」。\n这是国家三包规定，您有权申请。',
+        ],
+        pressure: ['名额有限，系统只保留 30 分钟，过时自动关闭。'],
+        redFlags: [
+          '骗子能报出你的订单信息，不代表他是你平台的客服——这些信息可能泄露自其他渠道。',
+          '主动加你的「客服」99% 是假的。正规平台退款都是原路退回，无需你任何操作。',
+        ],
+        advice: '不点对方发的任何链接。用商品 App 里的官方客服入口自己联系核实。',
+      },
+      {
+        id: 'screen',
+        name: '二、屏幕共享与「验证」',
+        goal: '远程控制你的手机，或让你开启屏幕共享',
+        lines: [
+          '您先下载一个会议软件，我们要做退款资格核验，需要您共享屏幕。',
+          '退款要先做资金验证，我给您一个「银联认证通道」，您按我说的填。',
+          '您把短信验证码念给我，我帮您后台操作，避免您填错。',
+        ],
+        pressure: ['不用紧张，全程我不会动您的钱。'],
+        redFlags: [
+          '屏幕共享 = 你的所有操作、银行验证码、支付密码都在对方眼皮下。',
+          '索要短信验证码，等同于交出账户控制权，任何正规机构都不需要。',
+        ],
+        advice: '验证码等同于你的签名，说出去钱就是别人的。',
+        systemMsg: '平台客服 0987 请求与你进行屏幕共享',
+      },
+      {
+        id: 'transfer',
+        name: '三、诱导转账/垫付',
+        goal: '让你把「退款」变成「先付款」',
+        lines: [
+          '系统显示您卡里多收了 200 元，需要您先退还，才能收到 300 元赔付。',
+          '您先转 300 到指定账户。\n系统验证后会连同赔付一起退给您。',
+          '这个操作叫「资金闭环」，走完这一步钱立刻到账。',
+        ],
+        pressure: ['不完成闭环，视为主动放弃赔付，投诉也没用。'],
+        redFlags: [
+          '「退款要先垫付」是逻辑诈骗：退款类永远不需要你先出钱。',
+          '「资金闭环」是诈骗行业术语，出现在对话中基本等同于定性。',
+        ],
+        advice: '任何需要你先付款/先转账的「退款」，一律直接拉黑。',
+      },
+      {
+        id: 'close',
+        name: '四、拖延与投诉威胁',
+        goal: '在你犹豫时制造焦虑',
+        lines: [
+          '您再考虑，投诉期只有 48 小时，过期系统自动判您放弃。',
+          '我这边已经给您登记了异议，会有第三方回访。\n到时候就不是退款的事了。',
+          '我这是好心提醒您，您不领是您的损失。',
+        ],
+        pressure: ['我们工号有录音，您说话小心一点。'],
+        redFlags: [
+          '「投诉期 48 小时」「工号有录音」是话术包装，不是正式流程。',
+          '「你不领是您的损失」倒转责任，逼你在压力下决策。',
+        ],
+        advice: '倒计时 + 投诉威胁 = 心理控制。冷静下来，脱离情绪再判断。',
+      },
+    ],
+  },
+
+  job: {
+    id: 'job',
+    title: '刷单返利「兼职」',
+    level: '中高危',
+    contact: {
+      nickname: 'HR-小琳',
+      avatar: '琳',
+      avatarBg: '#db2777',
+      source: '招聘网站投简历后被加的「HR」',
+      lastMsg: '您好，您应聘的岗位已经通过初筛，方便聊一下吗？',
+      unread: 3,
+    },
+    intro:
+      '你在招聘信息里看到「日结 300，只需动动手指点赞」。HR 小琳把你加到微信，' +
+      '说已通过筛选，现在需要你走「入职流程」。',
+    persona: '自称 XX科技 HR 小琳（态度亲切、节奏轻快、爱发表情包）',
+    background:
+      '刷单返利是大学生和刚工作人群最高发的类型，第一单必给真钱，很多人就栽在这一单。',
+    stages: [
+      {
+        id: 'hook',
+        name: '一、低门槛高回报',
+        goal: '让你相信轻松赚钱',
+        lines: [
+          '您好，您投的简历通过了～\n岗位是「数据标注 + 推广」，日结 200-300，只需点赞关注。',
+          '现在新人入职有 300 元无门槛补贴，做满 3 单就返，不做不退哦～',
+          '我们是正规公司，办公地址在 XX 大厦 18 楼。\n您也可以过来面试。',
+        ],
+        pressure: ['这个岗位今天最后招两个，明天就关闭了～'],
+        redFlags: [
+          '正规兼职不会在未入职、未签约前就要求你「做任务」。',
+          '日结 300 只需点赞，明显违背市场工资水平。',
+        ],
+        advice: '任何「先做任务再入职」的兼职，99% 是刷单。',
+      },
+      {
+        id: 'firstpay',
+        name: '二、第一单返现',
+        goal: '用真实到账建立信任',
+        lines: [
+          '第一单是 100 元的小额任务，您点这个链接完成 5 笔。\n佣金 8 元已到账，您看下账单～',
+          '第二单做 800 元的，佣金 96 元，我这就给您返。',
+          '看吧，我从不骗人，钱是真实的 😊',
+        ],
+        pressure: ['佣金累计满 500 可以提显，现在已经 104 了～'],
+        redFlags: [
+          '前几单确实返钱，是这一类骗局的标准设计，目的是让你敢下大单。',
+          '「点链接」而非平台内操作，意味着钱进了不受监管的个人账户。',
+        ],
+        advice: '小额返现不代表合法，可用资金往往只是「数字显示」，提现才会暴露问题。',
+        systemMsg: 'HR-小琳 发送了一个链接：新人任务引导页',
+      },
+      {
+        id: 'bigorder',
+        name: '三、大额连单',
+        goal: '让你把金额堆上去',
+        lines: [
+          '现在是重点单，建议充值 5000 一起做，佣金 800～',
+          '我们团队都在做这一单，您金额小反而拉低人均绩效。',
+          '您充值后金额不够，系统会自动申请垫付，垫付金额从佣金里扣。',
+        ],
+        pressure: ['今天平台有 10% 补贴，先到先得～'],
+        redFlags: [
+          '「充值」等于转账，这是把诈骗包装成「投资自己的钱」。',
+          '「自动垫付」是让你借钱/网贷的入口，后续以「任务未完成为由」要求继续充值。',
+        ],
+        advice: '刷单本身违法，参与即有被冻结账户的法律风险。',
+      },
+      {
+        id: 'freeze',
+        name: '四、冻结与连环「解冻」',
+        goal: '在你投完钱后制造无法提现',
+        lines: [
+          '系统检测到您账户异常，充值需要再充 3000 才能恢复正常提现。',
+          '这是平台的防刷机制，不交就永久冻结，您自己看着办。',
+          '再补最后一笔，我这边帮您走特批通道。',
+        ],
+        pressure: ['您都投了 8000 了，再补 3000 就能全部拿回来，别在这时候放弃呀～'],
+        redFlags: [
+          '沉没成本诱导：「都投了 8000 了」是骗子最有效的心理钩子。',
+          '「解冻费」本身又是一次诈骗，没有任何平台存在解冻充值。',
+        ],
+        advice: '到这一步越补越多。唯一正确动作是停止转账并报警。',
+      },
+    ],
+  },
+};
+
+const SCENARIO_LIST = Object.values(SCENARIOS).map((s) => ({
+  id: s.id,
+  title: s.title,
+  level: s.level,
+  intro: s.intro,
+  avatar: s.contact.avatar,
+  avatarBg: s.contact.avatarBg,
+  nickname: s.contact.nickname,
+}));
+
+/** @param {string} id @returns {any} */
+function getScenario(id) {
+  return SCENARIOS[id] || null;
+}
+
+/* ===== engine/rules.js ===== */
+/**
+ * 规则引擎 · 纯函数集合（可单元测试，无副作用）
+ * 所有判定均为「关键词/正则 + 明确规则表」，不依赖运行时 AI 推断。
+ */
+
+/** 规则表：受骗者回复 → 意图分类。顺序即优先级，先匹配先赢。 */
+const INTENT_RULES = [
+  {
+    intent: 'terminate',
+    weight: 100,
+    patterns: [
+      /(挂断|挂了|再见|结束|不聊了|停止|不说了|别说了)/,
+      /(报警|110|96110|12315|12395|反诈中心|找警察|曝光|举报|维权|起诉|律师|市场监管)/,
+      /(拉黑|删了?好友|删除好友|屏蔽|举报|不再理|不聊了|关掉)/,
+      /(我是不会|不可能|休想|想骗我|别费劲|我早就看穿|你就是骗子|骗子)/i,
+    ],
+  },
+  {
+    intent: 'suspicious',
+    weight: 60,
+    patterns: [
+      /(真的吗|确定吗|凭什么|为什么|有没有工号|哪个单位|哪个部门|派出所|能查证|核实|验证一下|怎么证明)/,
+      /(安全账户|国家|公安|法院|检察院|工信部|银监|证监会|监管|三包|规定|反诈中心|经侦)/,
+      /(免费的|要钱|收费|手续费|保证金|解冻|提现|垫付|先转|先付|刷单|兼职|日结)/,
+      // 微信场景下的反问：索要资质证明、要求走官方渠道核实
+      /(营业执照|资格证|从业资格|执业编号|备案|企查查|天眼查|官方客服电话|自己查)/,
+    ],
+  },
+  {
+    intent: 'comply',
+    weight: 40,
+    patterns: [
+      // 配合类动作：做了/要给钱/装好了，即使不说「好的」也算顺从
+      /(已经?下载|装好了|安装了?|打开了?|屏幕共享|远程控制|授权了)/,
+      /(我转|已转|转账|打款|付款|扫了|扫码|付了|充值了|垫付|借钱)/,
+      /(验证码是|密码是|卡号是|手机号是|我住在|我叫)/,
+      // 礼貌应答：需带词边界，避免「嗯今天」「行不」误伤
+      /(?:^|[^\u4e00-\u9fa5])(好的|好呀|可以|OK|ok|收到|明白|知道了|在的|我在|同意|愿意)(?:[^\u4e00-\u9fa5]|$)/,
+      /(怎么做|怎么办|怎么操作|怎么弄|发我|给我|听你的|你说|我信|我相信)/,
+    ],
+  },
+];
+
+/**
+ * 判定用户回复意图。
+ * @param {string} input
+ * @returns {{intent:string, matched:string|null}}
+ */
+function classifyIntent(input) {
+  const text = String(input || '');
+  for (const rule of INTENT_RULES) {
+    for (const p of rule.patterns) {
+      if (p.test(text)) return { intent: rule.intent, matched: String(p) };
+    }
+  }
+  return { intent: 'neutral', matched: null };
+}
+
+/**
+ * 受骗者「危险行为」检测：是否已交出敏感信息 / 表示愿意转账。
+ * 返回命中的风险项列表（用于实时告警与复盘评分）。
+ */
+const RISK_PATTERNS = [
+  { id: 'card', label: '提供了银行卡号', patterns: [/\d[\d\s-]{13,21}\d/, /银行卡号?\s*(是|为)?\s*\d{6,}/] },
+  { id: 'phone', label: '提供了手机号/住址等身份信息', patterns: [/\b1[3-9]\d{9}\b/, /(我住在|我家在|身份证号|姓名是|我叫)/] },
+  { id: 'otp', label: '透露了验证码/密码', patterns: [/(验证码|密码|支付密码|取款密码)/] },
+  { id: 'transfer', label: '表示愿意转账/付款', patterns: [/(我转|已转|转账|打款|付款|扫了|扫码|付了|充值了|垫付|借钱)/] },
+  { id: 'install', label: '同意下载安装对方指定的 APP / 打开对方发的链接', patterns: [/(下载了|装好了|打开了?那个?链接|安装了|已下载|点开了|我在里面)/] },
+  { id: 'screen', label: '同意屏幕共享/远程控制', patterns: [/(屏幕共享|远程控制|共享屏幕|授权了|同意了共享)/] },
+  { id: 'qrcode', label: '发送或扫描收款码/二维码', patterns: [/(收款码|二维码|微信转账|发你收款|扫了?收款)/] },
+  { id: 'keepalive', label: '继续配合并要求隐藏通话', patterns: [/(不挂电话|继续说|别挂|我配合|我不说|不会告诉)/] },
+];
+
+/** @returns {string[]} 命中的风险 id 列表 */
+function detectRisks(input) {
+  const text = String(input || '');
+  return RISK_PATTERNS.filter((r) => r.patterns.some((p) => p.test(text))).map((r) => r.id);
+}
+
+/** 命中风险的中文说明 */
+const RISK_LABELS = Object.fromEntries(RISK_PATTERNS.map((r) => [r.id, r.label]));
+
+/**
+ * 阶段推进规则：诈骗方读到用户意图后如何推进。
+ * - comply   → 前进一阶段（危险度升级）
+ * - neutral  → 原地重复当前阶段话术（骗子不会因为你沉默就收手）
+ * - suspicious→ 停留在当前阶段并加压（试图用话术化解质疑）
+ * - terminate→ 进入复盘
+ */
+function nextStep(currentIndex, intent, totalStages) {
+  if (intent === 'terminate') return { action: 'terminate', index: currentIndex };
+  if (intent === 'comply') {
+    const next = Math.min(currentIndex + 1, totalStages - 1);
+    return { action: next > currentIndex ? 'advance' : 'hold', index: next };
+  }
+  if (intent === 'suspicious') return { action: 'pressure', index: currentIndex };
+  return { action: 'hold', index: currentIndex };
+}
+
+/**
+ * 风险评分（0-100，越高越危险）。纯计算，便于测试。
+ * @param {{turns:number, complied:number, risks:string[], stageIndex:number}} s
+ */
+function scoreRisk({ turns, complied, risks, stageIndex }) {
+  const base = 20;
+  const complyPenalty = Math.round((complied / Math.max(turns, 1)) * 40);
+  const riskPenalty = risks.length * 10;
+  const stagePenalty = stageIndex * 10;
+  return Math.min(100, base + complyPenalty + riskPenalty + stagePenalty);
+}
+
+/** 风险等级判定（确定性） */
+function riskLevel(score) {
+  if (score >= 70) return { level: '危险', color: '#d93025', advice: '你在演练中表现得很顺从，真实环境里这几乎必然造成损失。' };
+  if (score >= 40) return { level: '偏高', color: '#e08600', advice: '你有警觉但仍在配合，骗子只需要再加一轮压力就会突破。' };
+  if (score >= 15) return { level: '谨慎', color: '#1e8e3e', advice: '你保持了 questioning 的态度，继续练习把它变成条件反射。' };
+  return { level: '安全', color: '#188038', advice: '你成功打断了诈骗节奏，这是最理想的结果。' };
+}
+
+/* ===== engine/ai.js ===== */
+/**
+ * AI 话术层：把知识库里的阶段信息编译成 system prompt，并调用 OpenAI 兼容接口。
+ * ---------------------------------------------------------------
+ * 分工原则（重要）：
+ *   规则引擎  → 决定剧情走到第几阶段、风险评分、是否终止（确定性、可复现、可单测）
+ *   AI        → 只负责把当前阶段的话术「说成人话」，保持人设
+ * 这样换任何一家模型都不影响演练的可评估性。
+ *
+ * 安全约束：
+ *   1. system prompt 明确禁止 AI 泄露破绽提示、禁止提供任何可执行的诈骗操作指引。
+ *   2. 模型输出仍会经过 kb/scenarios.js 的 sanitize() 二次脱敏。
+ *   3. baseUrl / key 由用户在设置面板填写，代码里不含任何默认密钥。
+ */
+
+/** 编译人设 system prompt（纯函数，可单测） */
+function buildSystemPrompt(scenario, stage, opts = {}) {
+  const { pressure = false, personaName = scenario.contact.nickname } = opts;
+  const samples = stage.lines.map((l) => `示例：${l.replace(/\n/g, ' / ')}`).join('\n');
+  return [
+    `你现在扮演一个正在实施诈骗的人，在微信里与「受害者」聊天。你就是对方本人，不要跳出角色。`,
+    ``,
+    `【你的身份】${scenario.persona}`,
+    `微信昵称：${scenario.contact.nickname}`,
+    `与受害者的关系：${scenario.contact.source}`,
+    ``,
+    `【当前剧情阶段】${stage.name}`,
+    `本阶段你的目标：${stage.goal}`,
+    ``,
+    `【本阶段你的话术风格参考】`,
+    samples,
+    ``,
+    `【硬性规则】`,
+    `1. 只输出发给对方的微信消息正文，不要加引号、不要写"对方说"之类的旁白、不要用 markdown。`,
+    `2. 长度控制在 1-3 句，像真人随手打字；可换行分段，不要长篇大论。`,
+    `3. 严禁承认自己在诈骗，严禁提到"演练""剧本""教学""破绽""风险提示"等字样。`,
+    `4. 严禁提供任何可实际执行的诈骗操作指引、工具推荐或规避检测方法。`,
+    `5. 严禁编造真实的银行账号、手机号、链接、二维码等；需要指代时用"我发你""点这个链接"这类说法。`,
+    pressure ? `6. 对方刚提出质疑或索要证据。你要急于自证、回避核心问题、用流程和规定压他，但绝不能给出可查证的凭证。` : `6. 按本阶段目标自然推进对话。`,
+    ``,
+    `现在以「${personaName}」的身份回复对方最后一句话。`,
+  ].join('\n');
+}
+
+/** 把会话历史编译成 messages 数组（纯函数） */
+function buildMessages(scenario, transcript, limit = 12) {
+  const recent = transcript.slice(-limit);
+  return recent
+    .filter((m) => m.role !== 'system')
+    .map((m) => ({ role: m.role === 'scammer' ? 'assistant' : 'user', content: m.text }));
+}
+
+/** 从模型返回内容里剥掉可能的引号/旁白（纯函数） */
+function cleanModelText(raw) {
+  let t = String(raw || '').trim();
+  t = t.replace(/^```[\s\S]*?\n/, '').replace(/```$/, '').trim();
+  t = t.replace(/^["'「『](.*)["'」』]$/s, '$1').trim();
+  // 去掉模型偶尔加的「对方：」「回复：」前缀
+  t = t.replace(/^(对方|回复|assistant|AI)\s*[:：]\s*/i, '').trim();
+  return t;
+}
+
+/** 校验用户填写的设置（纯函数）→ { ok, errors } */
+function validateSettings(cfg) {
+  const errors = [];
+  if (!cfg || typeof cfg !== 'object') return { ok: false, errors: ['配置为空'] };
+  if (!cfg.baseUrl || !/^https?:\/\/.+/i.test(cfg.baseUrl)) errors.push('Base URL 必须是 http(s) 开头的地址');
+  if (!cfg.apiKey || String(cfg.apiKey).trim().length < 8) errors.push('API Key 长度不足');
+  if (!cfg.model || String(cfg.model).trim().length === 0) errors.push('模型名不能为空');
+  return { ok: errors.length === 0, errors };
+}
+
+/**
+ * 调用 OpenAI 兼容的 chat/completions 接口。
+ * @param {{baseUrl:string, apiKey:string, model:string, temperature?:number, maxTokens?:number}} cfg
+ * @param {Array<{role:string, content:string}>} messages
+ * @returns {Promise<string>} 模型回复文本
+ */
+async function callChat(cfg, messages, { timeoutMs = 30000, fetchImpl } = {}) {
+  const { ok, errors } = validateSettings(cfg);
+  if (!ok) throw new Error('配置无效：' + errors.join('；'));
+
+  const f = fetchImpl || (typeof fetch === 'function' ? fetch : null);
+  if (!f) throw new Error('当前环境没有 fetch，无法调用 API');
+
+  const url = cfg.baseUrl.replace(/\/+$/, '') + '/chat/completions';
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+
+  try {
+    const res = await f(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cfg.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages,
+        temperature: typeof cfg.temperature === 'number' ? cfg.temperature : 0.9,
+        max_tokens: cfg.maxTokens || 400,
+        stream: false,
+      }),
+      signal: controller ? controller.signal : undefined,
+    });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      throw new Error(`接口返回 ${res.status}${detail ? '：' + detail.slice(0, 200) : ''}`);
+    }
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content;
+    if (!text) throw new Error('接口未返回可用文本');
+    return cleanModelText(text);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
+ * 判定模型输出是否越界（泄露破绽 / 自称演练 / 提供可执行指令）。
+ * 命中则丢弃该条输出，退回规则话术。纯函数，可单测。
+ */
+const LEAK_PATTERNS = [
+  /破绽|风险提示|教学|演练|剧本|知识点|反诈提示/,
+  /\b(提示|注意)：?你(应该|可以)/,
+  /(这是(演练|模拟|测试))/,
+  /(教你|教你识别|如何识别诈骗|防骗指南)/,
+  /(建议(你|您)(立即)?(报警|拉黑|举报))/,
+  /作为(一个)?(AI|人工智能|助手|语言模型)/,
+];
+
+function isLeaking(text) {
+  const t = String(text || '');
+  return LEAK_PATTERNS.some((p) => p.test(t));
+}
+/* ===== engine/session.js ===== */
+/**
+ * 会话引擎：把知识库 + 规则引擎组合成一个可在微信聊天界面运行的状态机。
+ * 纯规则模式不需要网络；AI 接入为可选增强。
+ *
+ * 消息模型（统一用对象数组，便于 UI 渲染气泡）：
+ *   { role: 'scammer'|'victim'|'system', text, stage?, kind?: 'text'|'link'|'screen' }
+ *
+ * 分工：规则引擎决定阶段推进与风险评分（确定性、可复现、可单测）；
+ *       AI 只负责把当前阶段话术「说成人话」。换模型不影响演练可评估性。
+ */
+
+
+
+class ScamSession {
+  /** @param {string} scenarioId */
+  constructor(scenarioId) {
+    const sc = getScenario(scenarioId);
+    if (!sc) throw new Error(`未知剧本：${scenarioId}`);
+    this.sc = sc;
+    this.stageIndex = 0;
+    this.turns = 0;
+    this.complied = 0;
+    this.risks = new Set();
+    this.riskLog = [];
+    this.transcript = [];
+    this.finished = false;
+    this.lineCursor = 0;
+    this.transcript.push({
+      role: 'system',
+      kind: 'text',
+      text: `对方通过「${sc.contact.source}」添加你为好友`,
+    });
+    this.transcript.push({ role: 'system', kind: 'text', text: sanitize(sc.contact.lastMsg) });
+    this.transcript.push({
+      role: 'scammer',
+      stage: sc.stages[0].name,
+      kind: 'text',
+      text: sanitize(sc.intro),
+    });
+  }
+
+  get stage() {
+    return this.sc.stages[this.stageIndex];
+  }
+
+  /**
+   * 处理一条受骗者输入（纯规则，同步）。
+   * @param {string} input
+   */
+  handle(input) {
+    if (this.finished) return { type: 'ended', messages: [], alert: null, note: null, score: this.report().score };
+    const pre = this._advance(input);
+    if (pre.stop) return pre.result;
+    const text = sanitize(this._composeRuleText(pre.step));
+    return this._commit(text, pre.step, pre);
+  }
+
+  /**
+   * 处理输入，并在配置了 API 时由 AI 生成话术。
+   * 任何失败（网络/鉴权/输出越界）都自动降级为规则话术，note 字段说明原因供 UI 提示。
+   * @param {string} input
+   * @param {null|{baseUrl:string, apiKey:string, model:string, temperature?:number}} cfg
+   */
+  async handleAsync(input, cfg) {
+    if (!cfg || !cfg.apiKey) return this.handle(input);
+    if (this.finished) return { type: 'ended', messages: [], alert: null, note: null, score: this.report().score };
+
+    const pre = this._advance(input);
+    if (pre.stop) return pre.result;
+
+    const step = pre.step;
+    const st = this.stage;
+    let text = null;
+    let note = null;
+
+    try {
+      const sys = buildSystemPrompt(this.sc, st, { pressure: step.action === 'pressure' });
+      const msgs = buildMessages(this.sc, this.transcript);
+      const raw = await callChat(cfg, [{ role: 'system', content: sys }, ...msgs]);
+      if (!raw) throw new Error('模型返回空内容');
+      if (isLeaking(raw)) throw new Error('模型输出越界（疑似泄露教学提示），已降级');
+      text = sanitize(raw);
+    } catch (err) {
+      note = 'AI 调用失败，已切回内置话术：' + (err && err.message ? err.message : String(err));
+      text = sanitize(this._composeRuleText(step));
+    }
+
+    return this._commit(text, step, pre, note);
+  }
+
+  /**
+   * 状态推进 + 风险记账（规则层，AI 与规则模式共用）。纯同步。
+   * @returns {{stop:boolean, result?:any, step?:any, intent?:string, newRisks?:string[]}}
+   */
+  _advance(input) {
+    this.turns += 1;
+    this.transcript.push({ role: 'victim', kind: 'text', text: sanitize(input) });
+
+    const { intent } = classifyIntent(input);
+    const newRisks = detectRisks(input);
+    newRisks.forEach((r) => {
+      if (!this.risks.has(r)) {
+        this.risks.add(r);
+        this.riskLog.push({ turn: this.turns, id: r, label: RISK_LABELS[r] });
+      }
+    });
+    if (intent === 'comply') this.complied += 1;
+
+    const step = nextStep(this.stageIndex, intent, this.sc.stages.length);
+
+    if (step.action === 'terminate') {
+      this.finished = true;
+      const bye = {
+        role: 'scammer',
+        stage: '（对方已停止回复）',
+        kind: 'text',
+        text: sanitize('对方正在输入…\n（没有了）'),
+      };
+      this.transcript.push(bye);
+      return {
+        stop: true,
+        intent,
+        newRisks,
+        result: {
+          type: 'terminate',
+          messages: [bye],
+          alert: null,
+          note: null,
+          score: this.report().score,
+        },
+      };
+    }
+
+    if (step.index !== this.stageIndex) this.stageIndex = step.index;
+    return { stop: false, step, intent, newRisks };
+  }
+
+  /** 规则模式下的固定话术组装 */
+  _composeRuleText(step) {
+    const st = this.stage;
+    if (step.action === 'pressure') {
+      const base = st.lines[this.lineCursor % st.lines.length];
+      const press = st.pressure[0] || '您就别多想了，按流程走就行。';
+      return `${base}\n\n${press}`;
+    }
+    return st.lines[this.lineCursor % st.lines.length];
+  }
+
+  /** 提交一轮结果：写 transcript、组装消息、算告警 */
+  _commit(text, step, pre, note = null) {
+    const st = this.stage;
+    const messages = [];
+
+    // 进入新阶段时，先吐出该阶段附带的系统提示（链接 / 屏幕共享请求 / 拉群）
+    if (step.action === 'advance' && st.systemMsg) {
+      const sys = {
+        role: 'system',
+        kind: /链接|apk|入口/.test(st.systemMsg) ? 'link' : 'text',
+        text: sanitize(st.systemMsg),
+      };
+      this.transcript.push(sys);
+      messages.push(sys);
+    }
+
+    const reply = { role: 'scammer', stage: st.name, kind: 'text', text };
+    this.transcript.push(reply);
+    messages.push(reply);
+    this.lineCursor += 1;
+
+    const score = this.report().score;
+    const alert =
+      pre.newRisks.length > 0
+        ? {
+            level: 'danger',
+            text: `⚠ 危险行为已记录：${pre.newRisks.map((r) => RISK_LABELS[r]).join('、')}`,
+          }
+        : pre.intent === 'suspicious'
+        ? { level: 'warn', text: '对方开始加压。记住：真机构不怕你核实。' }
+        : null;
+
+    return { type: step.action, messages, alert, note, score };
+  }
+
+  /** 生成复盘报告 */
+  report() {
+    const risks = [...this.risks];
+    const score = scoreRisk({
+      turns: this.turns,
+      complied: this.complied,
+      risks,
+      stageIndex: this.stageIndex,
+    });
+    return {
+      scenario: this.sc,
+      contact: this.sc.contact,
+      turns: this.turns,
+      complied: this.complied,
+      risks,
+      riskLog: this.riskLog,
+      stageReached: this.stage.name,
+      score,
+      ...riskLevel(score),
+      transcript: this.transcript,
+    };
+  }
+}
+/* ===== kb/cases.js ===== */
+/**
+ * 诈骗案例库（教学用途）
+ * ---------------------------------------------------------------
+ * 收录目的是「让人认出骗局」，不是「教人实施骗局」。
+ * 因此每条案例都写清：手法怎么运作、话术长什么样、破绽在哪、遇到了怎么办。
+ *
+ * 硬性约束：
+ * 1. 不含真实案件当事人信息、真实账号、真实链接；所有号码/链接均以示意形式出现。
+ * 2. 话术片段仅用于让受害者「认得出」，不构成可执行的操作指南。
+ * 3. 每个分类都带 caseIds 冗余索引，便于分类切换时零遍历检索。
+ */
+
+/** 分类定义：顺序即首页展示顺序 */
+const CASE_CATEGORIES = [
+  { id: 'brush', name: '刷单返利', icon: '🛒', tone: '#d97706',
+    blurb: '以做任务返佣金为诱饵，先给真钱后吃大单' },
+  { id: 'police', name: '冒充公检法', icon: '👮', tone: '#dc2626',
+    blurb: '借国家权力名义制造恐惧，逼你转入安全账户' },
+  { id: 'invest', name: '虚假投资理财', icon: '📈', tone: '#059669',
+    blurb: '小额获利建立信任，投入后无法出金' },
+  { id: 'shopping', name: '虚假购物客服', icon: '🛍️', tone: '#7c3aed',
+    blurb: '用真实订单信息骗取信任，把退款变成垫付' },
+  { id: 'loan', name: '网络贷款', icon: '💳', tone: '#2563eb',
+    blurb: '放款前收手续费，收完钱人消失' },
+  { id: 'pig', name: '杀猪盘', icon: '💘', tone: '#db2777',
+    blurb: '长期培养感情，最后导向投资或博彩' },
+  { id: 'credit', name: '虚假征信与债务', icon: '📄', tone: '#0891b2',
+    blurb: '冒充平台代办征信修复，索要手续费' },
+  { id: 'familiar', name: '冒充熟人与领导', icon: '👔', tone: '#4f46e5',
+    blurb: '盗用熟人身份，语音视频也未必是真的' },
+  { id: 'prize', name: '中奖退税', icon: '🎁', tone: '#ca8a04',
+    blurb: '凭空送大奖，但要你先交钱' },
+  { id: 'crypto', name: '虚拟币与博彩', icon: '🪙', tone: '#65a30d',
+    blurb: '境外平台、稳赚话术，只出不进' },
+];
+
+/** @type {Record<string, any>} */
+const CASES = {
+  /* ---------------- 刷单返利 ---------------- */
+  c001: {
+    id: 'c001', catId: 'brush', title: '点赞日结三百，入职先做三单',
+    summary: '招聘平台上的「数据标注」兼职，入职前先要求充值做任务，第一单真的返了 8 块钱。',
+    date: '2026-03-14', severity: '中高危', tags: ['兼职', '返现', '垫付'],
+    method: [
+      '先用低门槛任务（点赞、关注、点链接）让你完成一单，佣金确实到账，让你相信平台是真的。',
+      '随即把任务金额成倍拉高，理由从「体验流程」变成「团队绩效」「平台补贴」。',
+      '当你投入变大，账户余额被锁，提现时提示需要「完成连单」或「充值达到门槛」。',
+    ],
+    say: [
+      '新人首单有 300 元无门槛补贴，做满 3 单就返，不做不退哦。',
+      '您充值后金额不够，系统会自动申请垫付，垫付从佣金里扣。',
+      '系统检测到账户异常，充值 3000 才能恢复正常提现，这是防刷机制。',
+    ],
+    cracks: [
+      '正规兼职不会在你入职、签约之前就让你「做任务」。',
+      '「日结 300 只需点赞」明显违背市场工资水平，异常即是信号。',
+      '刷单本身涉嫌违法，账号可能被冻结——这是有法律风险的，不是稳赚兼职。',
+    ],
+    action: [
+      '任何让你先充值的兼职，一律直接退出，不参与。',
+      '已在进行中的，立即停止所有转账，并在平台投诉、报警。',
+    ],
+  },
+  c002: {
+    id: 'c002', catId: 'brush', title: '「刷单群」里的托：全是真人截图',
+    summary: '群里有几十个人晒收益，晒单时间精确到秒，实为同一伙人用小号自导自演。',
+    date: '2026-01-22', severity: '中危', tags: ['群聊', '托', '晒单'],
+    method: [
+      '群内安排「学员」按时晒收益截图，制造从众压力。',
+      '所谓导师在私聊中劝你「跟上这一波」，并在群里公开为你「背书」。',
+      '当你想提现时，群内开始出现「系统维护」「限流」的说法。',
+    ],
+    say: ['机会只有两天，过了这一波大盘就涨上去了。', '别人都上车了，就等您一个。'],
+    cracks: [
+      '收益截图可伪造，且群内活跃账号可能是同一伙人的小号。',
+      '群聊本身不受监管，你无法核实任何人的真实身份。',
+      '真正的投资顾问受《证券法》约束并需备案，群聊里的「老师」不受任何约束。',
+    ],
+    action: [
+      '不要因为「大家都在做」而降低判断标准，群聊氛围是最常见的操纵手段。',
+      '任何群聊里带单的行为，直接举报平台并退出。',
+    ],
+  },
+  c003: {
+    id: 'c003', catId: 'brush', title: '免费领水果，付款页是「凑单」',
+    summary: '扫码领一箱水果，订单页却在最后一步跳转到陌生收银台。',
+    date: '2025-11-08', severity: '中危', tags: ['免费', '扫码', '跳转'],
+    method: [
+      '以「免费领水果」「1 分试用」为诱饵，引导你扫码。',
+      '跳转页面外观仿冒主流电商，但域名完全不同。',
+      '你输入的支付密码与短信验证码被直接送到攻击者手里。',
+    ],
+    say: ['仅限今天，明天恢复原价。', '这个活动是我们和商家联合的，不收任何费用。'],
+    cracks: [
+      '扫码后网址发生变化，与宣传来源不一致，这是最直接的判断依据。',
+      '「免费」却要求填写支付信息，本身自相矛盾。',
+      '短信验证码在任何场景下都不应该填给「商家」。',
+    ],
+    action: [
+      '扫码前看清链接域名，不要只看二维码图案。',
+      '已经填过支付信息的，立即联系银行冻结账户并修改支付密码。',
+    ],
+  },
+
+  /* ---------------- 冒充公检法 ---------------- */
+  c004: {
+    id: 'c004', catId: 'police', title: '反诈中心的「陈警官」要求资金清查',
+    summary: '自称市局反诈中心，说你银行卡涉嫌转移诈骗资金，要求把钱转入「安全账户」验证。',
+    date: '2026-05-19', severity: '高危', tags: ['公检法', '安全账户', '保密'],
+    method: [
+      '第一通电话只说「涉嫌洗钱」，用刑事词汇制造最大恐惧。',
+      '随即转为微信联系，发来伪造的警官证、逮捕证、资产保全文书。',
+      '要求你「保密，不得告知家属」，把你与所有能劝阻你的人隔开。',
+      '最后引导你转入所谓「安全账户」，并强调验证后原路退回。',
+    ],
+    say: [
+      '系统检测到您尾号 3321 的银行卡涉嫌转移诈骗资金 87 万，需要配合调查。',
+      '按规定核查期间不能告诉任何家属，这叫保密纪律，泄露会导致案件扩大。',
+      '清查需要把余额转入安全账户验证，验证完原路退回，一分不少。',
+    ],
+    cracks: [
+      '公检法绝不会通过电话或网络视频办案，也绝不设「安全账户」。这类账户本身不存在。',
+      '真警察不会要求你保密到「连家人都不能说」——这是怕你被身边人劝阻。',
+      '真实的执法有固定文书和时限，不会用「三分钟」「十分钟」倒计时。',
+    ],
+    action: [
+      '挂断，自己拨打 110 或 12395（全国公安反诈专线）核实，不要回拨对方给的任何号码。',
+      '凡要求转账的公检法来电，一律视为诈骗。',
+    ],
+  },
+  c005: {
+    id: 'c005', catId: 'police', title: '视频里穿着警服的「民警」',
+    summary: '对方发来视频通话，画面里的「民警」穿着警服，态度和善，仍是伪造。',
+    date: '2025-09-30', severity: '高危', tags: ['视频', 'AI换脸', '伪造证件'],
+    method: [
+      '用预先录制的视频或 AI 换脸，让你确信对面是真的警察。',
+      '伪造证件照片营造真实感，但细节（字体、印章、编号格式）经不起推敲。',
+      '在视频之后立刻转入文字引导，避免通话中出现破绽。',
+    ],
+    say: ['这是我的警号，您可以在公安内网查到。', '我穿着警服跟你通话，还有什么可疑的？'],
+    cracks: [
+      '视频可以被剪辑、换脸、循环播放，出现「像真人」不构成可信证据。',
+      '公安内网不对外开放，任何人无法凭警号在网上查证。',
+      '真正的执法不会通过视频「远程办案」完成资金清查。',
+    ],
+    action: [
+      '不因为对方穿着警服就降低警惕，出示证件的行为可以伪造。',
+      '唯一可靠方式：自己挂断，拨打 110 求证。',
+    ],
+  },
+  c006: {
+    id: 'c006', catId: 'police', title: '「涉嫌洗钱」是真的，但发消息的不是警察',
+    summary: '你确实有异常流水，于是骗子利用这一点，精准伪装成调查人员。',
+    date: '2026-02-27', severity: '高危', tags: ['精准诈骗', '信息真实'],
+    method: [
+      '骗子先通过其他渠道获取你真实的交易信息（他人盗用你账户、卡被复制等）。',
+      '由于信息属实，你的警惕心会被「他说的是真的」这一事实抵消。',
+      '在真实事件基础上，附加骗术：安全账户、保密、限时。',
+    ],
+    say: ['系统显示您的账户在 X 月 X 日有一笔 3 万元的异常入账。', '请您配合调查，切勿泄露案情。'],
+    cracks: [
+      '信息属实不等于对方身份属实——这是精准诈骗最核心的心理漏洞。',
+      '涉及自身涉刑问题，任何机关都不会用社交软件联系你。',
+      '「涉案」不等于「有资金处置权」，配合调查不需要你转账。',
+    ],
+    action: [
+      '收到涉及自己涉案的信息时，第一反应是找官方渠道核实，而不是配合调查。',
+      '如确涉刑疑，以及时咨询律师，不要与自称办案的人私下沟通。',
+    ],
+  },
+
+  /* ---------------- 虚假投资理财 ---------------- */
+  c007: {
+    id: 'c007', catId: 'invest', title: '陈老师带你做「内部标」',
+    summary: '投资群里认识的分析师，单独拉你进小群，承诺先投 500 试试，盈了他抽成。',
+    date: '2026-06-11', severity: '中高危', tags: ['荐股', '私域', '诱导开户'],
+    method: [
+      '先用「亏了算我的、盈利分成」降低你的戒备，让你以为没有风险。',
+      '第一笔小额投资确实盈利，但那是平台上的数字，不是可提现的钱。',
+      '在你加大投入后，平台以「提现需交保证金」「系统异常」为由不断要求追加。',
+    ],
+    say: [
+      '我从不收费，只收盈利分成，这是规矩，也是信任。',
+      '您提现的时候系统提示异常，需要缴纳 20% 的保证金才能解冻。',
+      '这是银监会的规定，不交就被判定洗钱，您自己账户也会被冻结。',
+    ],
+    cracks: [
+      '正规证券、期货投资必须在持牌机构 APP 开户，资金进入第三方支付或个人账户即为高危。',
+      '「提现要交保证金」是收网信号——所有正规平台提现都是免费的。',
+      '聊天软件里的「带单老师」无任何资质可查，收益截图可伪造。',
+    ],
+    action: [
+      '在非持牌 App 上操作的「老师」，一律按诈骗处理。',
+      '已投入的立刻停止转账、报警并联系银行止付，越早越有机会拦下。',
+    ],
+  },
+  c008: {
+    id: 'c008', catId: 'invest', title: '虚假平台：营业执照是别人的',
+    summary: '平台页面做得像模像样，营业执照也发给你，但主体查不到实际运营方。',
+    date: '2025-12-16', severity: '中高危', tags: ['虚假平台', '营业执照'],
+    method: [
+      '使用真实存在但被冒用的公司资质，让查询看起来「有据可查」。',
+      '你查到的是壳公司，与实际收款账户毫无关系。',
+      '资金进入个人或第三方账户，完全不受监管体系覆盖。',
+    ],
+    say: ['平台是境内的，营业执照我都发您，您可以去企业信息查询网查。'],
+    cracks: [
+      '查得到营业执照 ≠ 资金安全。合法资质与资金托管是两件事。',
+      '正规投资平台要求资金进入持牌机构的存管账户，而非对私转账。',
+      '域名注册时间极短、页面无金融备案信息，都是明显破绽。',
+    ],
+    action: [
+      '不要把「有营业执照」当作背书，只认资金是否进入监管账户。',
+      '投资前先查平台是否在证监会/当地金融监管部门公布的名单内。',
+    ],
+  },
+  c009: {
+    id: 'c009', catId: 'invest', title: '「稳赚不赔」的智能荐股小程序',
+    summary: '号称年化 30% 保底，App 界面专业、数据完整，实为操盘收割。',
+    date: '2025-08-05', severity: '高危', tags: ['荐股软件', '保本承诺'],
+    method: [
+      '用专业界面和实时行情制造专业感，数据本身可能是真实的，但交易通道是假的。',
+      '在「保本」「稳赚」话术下，降低用户对亏损的警惕。',
+      '小额定投先给甜头，等仓位建立后通过操控行情或直接冻结出金收割。',
+    ],
+    say: ['年化 30% 保底，亏损我们补。', '这个策略只对内部会员开放，机会难得。'],
+    cracks: [
+      '任何承诺保本保收益的投资都是违规的，正规金融机构法律上不允许。',
+      '数据可以真实，但只要资金不经监管账户，盈亏完全由对方决定。',
+    ],
+    action: ['凡遇保本承诺，直接拉黑并举报。', '投资务必通过持牌机构，认准「理财非存款、产品有风险」提示。'],
+  },
+
+  /* ---------------- 虚假购物客服 ---------------- */
+  c010: {
+    id: 'c010', catId: 'shopping', title: '客服 0987：您的商品要全额退款 + 300 赔付',
+    summary: '对方能准确说出你三个月前的订单号，说商品批量质量问题，可退款并赔付。',
+    date: '2026-04-03', severity: '中危', tags: ['退款', '订单信息', '垫付'],
+    method: [
+      '通过泄露的订单信息制造真实感，让你相信对方确实是客服。',
+      '以「退款资格核验」为由要求下载会议软件并开启屏幕共享。',
+      '最后以「卡里多收了钱」为借口，把退款变成你先垫付。',
+    ],
+    say: [
+      '您好，请问是 138****6621 的用户吗？您 3 月 12 日购买的订单出现批量质量问题。',
+      '您把短信验证码念给我，我帮您后台操作，避免您填错。',
+      '系统显示您卡里多收了 200 元，需要您先退还才能收到 300 元赔付。',
+    ],
+    cracks: [
+      '能报出订单信息不代表他是客服——信息可能泄露自其他渠道。',
+      '屏幕共享意味着你的支付密码与验证码全在对方眼皮下。',
+      '「退款要先垫付」是逻辑诈骗：退款永远不需要你先出钱。',
+    ],
+    action: [
+      '挂断，用商品 App 里的官方客服入口自己联系核实。',
+      '验证码等同于你的签名，任何情况下都不要念给别人。',
+    ],
+  },
+  c011: {
+    id: 'c011', catId: 'shopping', title: '「快递丢件理赔」：主动打来的电话',
+    summary: '自称某快递公司，说你的包裹丢失要理赔，让你配合「验证」。',
+    date: '2025-10-12', severity: '中危', tags: ['快递', '理赔', '来电'],
+    method: [
+      '利用快递信息高度分散的现状，凭单号即可编造理赔理由。',
+      '以「公司规定不能直接退现金」为由，引导到你熟悉的资金操作。',
+      '在「正规流程」的包装下，索要验证码或要求下载指定 App。',
+    ],
+    say: ['您的包裹在运输中丢失，公司按规定给您做理赔。', '公司不能直接退现金，需要您配合走线上验证。'],
+    cracks: [
+      '主动来电的「客服」几乎都是假的，正规理赔都是原路退回。',
+      '快递理赔不需要你提供验证码，也不需要你下载任何 App。',
+    ],
+    action: ['挂断后，自己到快递官方 App 或官网查真实物流状态。', '不确定时只认官方入口，不认对方给的链接。'],
+  },
+  c012: {
+    id: 'c012', catId: 'shopping', title: '二手交易「先确认收货」',
+    summary: '闲鱼等平台上，对方催促你先点「确认收货」再付款。',
+    date: '2025-07-21', severity: '中危', tags: ['二手交易', '确认收货'],
+    method: [
+      '诱导你在平台外交易，脱离平台的担保机制。',
+      '利用「我急着发快递」「系统要关闭订单」制造时间压力。',
+      '一旦你先确认收货，后续不付款也没有任何保障。',
+    ],
+    say: ['你先确认收货，我马上付款，不信我就投诉你。'],
+    cracks: [
+      '平台担保交易的核心就是「确认收货前钱在平台」，主动放弃必然吃亏。',
+      '任何催促你放弃担保的行为，都是在削弱保护你的机制。',
+    ],
+    action: ['坚持平台内交易，不点确认收货后再付款。', '遇到威胁投诉的，直接举报，不与其争执。'],
+  },
+
+  /* ---------------- 网络贷款 ---------------- */
+  c013: {
+    id: 'c013', catId: 'loan', title: '「无抵押秒放款」，放款前先收手续费',
+    summary: '征信不好也能秒批，但要交 800 元「审核费」，交完就无法再交。',
+    date: '2026-02-05', severity: '中高危', tags: ['贷款', '手续费', '黑产'],
+    method: [
+      '针对急需用钱的人，利用「征信瑕疵也能做」这一话术精准吸客。',
+      '以保证金、风险金、解冻费、律师费等名目连续收款。',
+      '每一笔费用都编造一个合理名目，让你觉得「再交最后一笔」。',
+    ],
+    say: [
+      '这是平台的风险金，到账后自动退还。',
+      '您的账户被冻结了，需要再交一笔解冻费才能放款。',
+    ],
+    cracks: [
+      '正规贷款机构放款前不收取任何费用，只在利息中体现成本。',
+      '「秒批」「无抵押」「征信不良可做」三者同时出现，基本可判定为黑产。',
+      '钱越交越多，永远交不完，这是流程本身就是骗局。',
+    ],
+    action: [
+      '任何放款前收费的贷款，直接放弃。',
+      '资金紧张时优先考虑正规银行与持牌消费金融公司。',
+    ],
+  },
+  c014: {
+    id: 'c014', catId: 'loan', title: '「征信不好也能贷」的群发短信',
+    summary: '收到大量「无需征信、当天放款」的短信，点进去是收集信息的假页面。',
+    date: '2025-06-18', severity: '低危', tags: ['短信引流', '信息收集'],
+    method: [
+      '广撒网获取手机号，正规机构不会用这种方式营销。',
+      '假页面收集身份信息、银行卡与验证码。',
+      '信息被二次贩卖，或直接用于后续精准诈骗。',
+    ],
+    say: ['【XX金融】您的额度已提升至 20 万，点击立即领取。'],
+    cracks: [
+      '正规金融机构短信均标注官方客服电话，且不会诱导点击陌生短链。',
+      '短信里的链接无法对应到任何持牌机构。',
+    ],
+    action: ['不点击短信链接，不在陌生页面填写身份与银行卡信息。', '需要贷款时直接访问机构官网或官方 App。'],
+  },
+  c015: {
+    id: 'c015', catId: 'loan', title: '「帮我还债」的高额返利',
+    summary: '有人称能帮你处理网贷逾期、垫资还款，手续费低，还完却不断加价。',
+    date: '2026-05-06', severity: '中高危', tags: ['债务', '垫资', '拖延'],
+    method: [
+      '抓住债务人不敢告诉家人的心理弱点。',
+      '以「专业协商」为名，实际不断制造新的债务与利息。',
+      '拖延战术让你无暇报警，错过最佳止付时机。',
+    ],
+    say: ['这笔我能帮你摆平，先付 30% 保证金，剩下的交完债再给。'],
+    cracks: [
+      '合法的债务协商有正规司法与金融渠道，不存在私下「摆平」。',
+      '任何要求你先付大额定金才肯办事的，本身就是新的诈骗。',
+    ],
+    action: ['债务问题优先咨询正规机构或律师。', '若被以债务为由收取费用，立即报警。'],
+  },
+
+  /* ---------------- 杀猪盘 ---------------- */
+  c016: {
+    id: 'c016', catId: 'pig', title: '半年不谈钱的「网友」',
+    summary: '网上认识半年，每天嘘寒问暖，唯独从不肯视频，最后说要做投资。',
+    date: '2026-07-08', severity: '高危', tags: ['长期养成', '投资', '情感操控'],
+    method: [
+      '长期经营关系，刻意不谈钱，让你产生真实情感依赖。',
+      '在恰好的时机「无意中」提及自己有个赚钱机会。',
+      '你投入后对方消失，或以「你的操作有问题」为由要求继续充值。',
+    ],
+    say: ['我也不懂这些，是朋友带我做的……你信我就试一点。'],
+    cracks: [
+      '长期不见面、拒绝视频、只在特定时段联系，是典型人设特征。',
+      '凡引导你投资或参与博彩的网友，无论关系多好，都应立即断联。',
+      '真正的感情不建立在共同投资之上。',
+    ],
+    action: [
+      '无论投入多少，止损的唯一办法是停止转账并报警，不要试图「再投一个」找回来。',
+      '及时告知家人，防止对方以你名义借款。',
+    ],
+  },
+  c017: {
+    id: 'c017', catId: 'pig', title: '「导师」和「学员」都是一个人',
+    summary: '你加了好友之后发现，群里的热闹全是小号演的戏。',
+    date: '2025-11-29', severity: '中高危', tags: ['群托', '人设', '伪造社交'],
+    method: [
+      '同一伙人扮演导师、学员、理财顾问等多重角色。',
+      '用「真实感」降低你的戒心，营造大量人参与的安全错觉。',
+      '在你动摇时，安排「学员」私聊分享所谓收益。',
+    ],
+    say: ['我把我学员的收益截图给你看，都是真实学员。'],
+    cracks: [
+      '截图可伪造，群聊人数可虚构，你无法核实任何一个身份。',
+      '若真有大群赚钱，多数群里早就是一片骂声而不是一片晒单。',
+    ],
+    action: ['对聊天环境中「逼你行动」的压力保持警惕。', '涉及投资一律回到持牌机构渠道。'],
+  },
+  c018: {
+    id: 'c018', catId: 'pig', title: '婚恋平台认识，转账后「失联」',
+    summary: '对方一直说在国内做工程不能开视频，最后称母亲生病急需用钱。',
+    date: '2025-12-22', severity: '高危', tags: ['婚恋', '借款', '情感'],
+    method: [
+      '建立亲密关系后，选择最难以拒绝的时机提出用钱。',
+      '金额从小到大，每次都有新的理由。',
+      '钱到账后立即更换账号、拉黑或「失联」。',
+    ],
+    say: ['我妈住院了，急需 3 万手术费，我这边走不开，你先帮我一下。'],
+    cracks: [
+      '长期不开视频、不肯线下见面，是关键破绽。',
+      '任何以感情为纽带提出的借款，都应该假设拿不回来。',
+    ],
+    action: ['不熟悉的网友借款，一律拒绝，无例外。', '已转账的立即报警，并保存全部聊天与转账记录。'],
+  },
+
+  /* ---------------- 虚假征信与债务 ---------------- */
+  c019: {
+    id: 'c019', catId: 'credit', title: '「征信修复」：先交 3000 走关系',
+    summary: '宣称能帮你消除征信不良记录，收费 3000，成功率 100%。',
+    date: '2026-03-02', severity: '中危', tags: ['征信', '代办', '承诺'],
+    method: [
+      '抓住征信不良者的焦虑，利用「内部有人」的假象。',
+      '征信记录由央行统一管理，任何机构和个人都无权「修复」。',
+      '收款后不断以「材料不合规」「需要加急」为由追加费用。',
+    ],
+    say: ['我们有内部渠道，100% 消除记录，3000 元，三天见效。'],
+    cracks: [
+      '征信记录不存在「修复」这一说，异议申请只能通过正规渠道免费提交。',
+      '承诺 100% 成功的机构，一定是骗子——正规业务没有百分之百。',
+    ],
+    action: [
+      '征信有异议，走央行征信中心官方渠道免费申请。',
+      '不要相信任何收费的「征信洗白」。',
+    ],
+  },
+  c020: {
+    id: 'c020', catId: 'credit', title: '「注销校园贷」骗局',
+    summary: '自称平台客服，说你开通过校园贷影响征信，要求清空额度。',
+    date: '2025-05-16', severity: '中危', tags: ['校园贷', '注销', '冒充'],
+    method: [
+      '利用年轻学生对征信记录的焦虑。',
+      '编造「不处理会影响你一辈子」的极端后果。',
+      '以「验证资金安全」为名索要验证码或要求转账。',
+    ],
+    say: ['这笔额度不注销，会一直影响你征信，还款都可能有影响。', '请把短信验证码发我，我帮您后台注销。'],
+    cracks: [
+      '正规平台不会主动以「影响征信」为由催促你操作。',
+      '注销任何业务都不需要提供短信验证码。',
+    ],
+    action: ['挂断，通过贷款平台官方 App 自行查看是否有待结清账户。', '任何「注销业务」索取验证码的都是诈骗。'],
+  },
+  c021: {
+    id: 'c021', catId: 'credit', title: '冒充「债务优化顾问」，先收服务费',
+    summary: '声称能帮你降低债务利息，签约前先收 8000 元服务费。',
+    date: '2026-08-11', severity: '中危', tags: ['债务', '服务费'],
+    method: [
+      '以「债务重组」「法务优化」为名包装成专业服务。',
+      '合同充满小字，真正的收费条款藏在内页。',
+      '服务费到手后以「需要先垫付诉讼费」继续要钱。',
+    ],
+    say: ['我们可以帮您把年化降到 6%，先签服务协议。'],
+    cracks: [
+      '不存在能单方面降低他人合同利率的合法服务。',
+      '要求预付大额服务费却不签正规合同，是典型风险信号。',
+    ],
+    action: ['债务协商只走银行官方渠道或持牌机构。', '签约前务必看清收费条款与机构资质。'],
+  },
+
+  /* ---------------- 冒充熟人与领导 ---------------- */
+  c022: {
+    id: 'c022', catId: 'familiar', title: '「儿子」发来的加微信：手机摔了',
+    summary: '孩子 QQ 号发消息说手机摔坏急用钱，让你先转给同学。',
+    date: '2026-09-04', severity: '高危', tags: ['冒充亲属', '急用钱', '语音'],
+    method: [
+      '孩子账号被盗或被仿冒，用「手机坏了改用 QQ」作为理由。',
+      '制造紧迫感（「老师等着」，「不让爸妈知道」），压缩你核实的时间。',
+      '已进化出语音克隆版本，声音也未必是真的。',
+    ],
+    say: ['爸/妈，我手机摔了，这是我同学的微信，先转 5000 交书本费。'],
+    cracks: [
+      '任何涉及钱的请求，都必须用另一个渠道重新联系本人。',
+      '语音可以被克隆，「听到孩子的声音」已不构成可靠验证。',
+      '以「不让爸妈知道」为理由，几乎必然有问题。',
+    ],
+    action: [
+      '挂断，直接打孩子本人的常用号码核实。',
+      '遇到疑似冒充，一律先核验再谈钱，不给任何人不核实就转账。',
+    ],
+  },
+  c023: {
+    id: 'c023', catId: 'familiar', title: '「领导」微信：我在开会，帮我垫付',
+    summary: '领导微信头像和名字都对，说在开会不方便电话，让你去转账。',
+    date: '2026-04-25', severity: '高危', tags: ['冒充领导', '转账', '权限'],
+    method: [
+      '通过盗号进入领导微信，保留其历史朋友圈以增强可信度。',
+      '以「开会」「信号不好」为由拒绝通话。',
+      '编造的项目款、差旅费理由听起来完全合理。',
+    ],
+    say: ['我在开会不太方便，你先帮我垫付一下，回来我给你报。'],
+    cracks: [
+      '涉及大额转账，正规单位必有内部审批流程，不存在「你先垫我回来给你」。',
+      '拒绝通话、拒绝视频，本身就是重大警示。',
+    ],
+    action: [
+      '务必通过电话或当面核实，微信文字不能作为转账依据。',
+      '单位应建立转账的二次确认制度，从流程上堵住这个口子。',
+    ],
+  },
+  c024: {
+    id: 'c024', catId: 'familiar', title: '好友的「一哥」发来的帮忙请求',
+    summary: '好友的头像和昵称全对，但语气、内容与本人差异明显。',
+    date: '2025-08-30', severity: '中高危', tags: ['冒充好友', '语气异常'],
+    method: [
+      '盗用好友账号，先寒暄几句套近乎，再提出借钱。',
+      '模仿语气但细节失真——用词、标点、称呼习惯都对不上。',
+      '若被识破，账号主人可能同时被封控，你也无法联系上。',
+    ],
+    say: ['在吗？我手机号换了，你方便先转我 2000 应急。'],
+    cracks: [
+      '换手机号是极不常见的请求，应当直接打电话给本人。',
+      '借钱类请求与往期聊天风格不符，是重要信号。',
+    ],
+    action: ['任何转账前用其他渠道确认，哪怕对方说「来不及」。', '察觉异常时先联系本人，不要回复试探，会暴露你的怀疑。'],
+  },
+
+  /* ---------------- 中奖退税 ---------------- */
+  c025: {
+    id: 'c025', catId: 'prize', title: '恭喜中奖，但要交个人所得税',
+    summary: '短信通知你中奖 5 万元，需先交 800 元个人所得税才能领取。',
+    date: '2025-04-19', severity: '中危', tags: ['中奖', '税费', '领奖'],
+    method: [
+      '凭空制造获奖事实，利用「意外之财」的措辞降低戒心。',
+      '以合法税费为名义收费——听起来无可反驳。',
+      '交付后继续以「保证金」「手续费」名义追加。',
+    ],
+    say: ['恭喜您获得特等奖，按规定需先缴纳 20% 个人所得税。'],
+    cracks: [
+      '中奖是概率极小的事，主动找你领奖的概率更低。',
+      '正规机构的领奖不会要求你向个人账户先行转账。',
+    ],
+    action: ['凡先交钱后领奖的，一律不参与。', '通过官方渠道核实活动真实性后再做任何操作。'],
+  },
+  c026: {
+    id: 'c026', catId: 'prize', title: '「退还个人所得税」的退税电话',
+    summary: '自称税务部门，说你多缴税要退税，需要配合「资金验证」。',
+    date: '2026-01-09', severity: '中高危', tags: ['退税', '冒充税务'],
+    method: [
+      '利用人对税务部门的信任感。',
+      '编造退税理由，随后转入与公检法骗局相同的「安全账户」话术。',
+      '强调「不验证就影响个人征信」。',
+    ],
+    say: ['您的账户多缴税款需退还，请配合完成资金验证。'],
+    cracks: [
+      '退税从来不需要你主动配合，更不需要转账。',
+      '税务与公安一样，绝不会设「安全账户」。',
+    ],
+    action: ['对税务相关来电，拨打 12366（纳税服务热线）核实。', '凡要求转账的，一律拒绝。'],
+  },
+  c027: {
+    id: 'c027', catId: 'prize', title: '直播间「免费送手机」',
+    summary: '直播间抽奖中奖，客服说要寄快递先付 200 元运费。',
+    date: '2025-03-27', severity: '低危', tags: ['直播', '中奖', '运费'],
+    method: [
+      '利用直播间的热闹氛围，让你不好意思质疑。',
+      '以小额运费降低你的心理门槛。',
+      '后续以包装费、关税、退货运费等名义继续收费。',
+    ],
+    say: ['亲，奖品需要您先付一下运费哦，不然发不出去。'],
+    cracks: [
+      '正规商家送礼不需要收运费，更不会让你通过私人转账支付。',
+      '直播间营造的「大家都在参与」氛围不构成任何保证。',
+    ],
+    action: ['任何以中奖为由的私下转账都直接拒绝。', '确需参与活动，只走平台官方流程。'],
+  },
+
+  /* ---------------- 虚拟币与博彩 ---------------- */
+  c028: {
+    id: 'c028', catId: 'crypto', title: '虚拟币投资群：老师带单，稳赚不赔',
+    summary: '群内宣传年化翻倍，App 显示盈利，实际资金进入境外平台无法出金。',
+    date: '2026-06-24', severity: '高危', tags: ['虚拟币', '境外平台', '博彩'],
+    method: [
+      '利用虚拟币「去中心化、高收益」的刻板印象。',
+      '小额定投获得真实提现一次，随后提高门槛。',
+      '以「合规要求缴税」为由要求向个人钱包转账。',
+    ],
+    say: ['这个盘子已经在做合规了，需要先交 30% 保证金才能解锁仓位。'],
+    cracks: [
+      '提现受阻时提出的任何费用，都是诈骗的收网环节。',
+      '境外不受监管的平台，你的资金不受任何法律保护。',
+    ],
+    action: [
+      '已经投进去的钱要立刻报警并联系银行止付。',
+      '我国虚拟货币相关业务活动属于非法金融活动，不参与。',
+    ],
+  },
+  c029: {
+    id: 'c029', catId: 'crypto', title: '赌球群：跟着大佬下注',
+    summary: '群里天天晒赢钱，群主称有内部数据，稳赢不输。',
+    date: '2025-10-25', severity: '高危', tags: ['赌博', '内部数据', '洗钱'],
+    method: [
+      '晒单盈利是标准开局手段，前面赢几把建立信心。',
+      '在你加大投入后，通过操控结果让你「跟单失误」。',
+      '群主以「信誉」为由要求你继续充值追回。',
+    ],
+    say: ['我这边有内部数据，跟着我下不会错，赢了我分你三成。'],
+    cracks: [
+      '任何声称掌握内部数据的行为都是概率操纵，结果由庄家决定。',
+      '参与网络赌博本身涉嫌违法，资金不受保护。',
+    ],
+    action: ['不参与任何形式的网络博彩。', '已被诱导参与并转账的，立即报警。'],
+  },
+  c030: {
+    id: 'c030', catId: 'crypto', title: 'NFT 抢购：机器人脚本一夜暴富',
+    summary: '社群宣传内部脚本可抢空投，付费入群获取「资格」。',
+    date: '2026-09-18', severity: '高危', tags: ['虚拟资产', '社群', '内部脚本'],
+    method: [
+      '用「内部资格」「限时名额」制造稀缺感。',
+      '群费、工具费、保证金层层加码。',
+      '所谓脚本仅是群主编造的噱头。',
+    ],
+    say: ['入群 999 元可获得内测名额，脚本仅限 50 名。'],
+    cracks: [
+      '稀缺性完全靠话术制造，可随时扩大名额。',
+      '任何承诺稳定收益的自动化工具都不存在。',
+    ],
+    action: ['不参与任何付费入群的「投资机会」。', '虚拟资产相关业务活动在我国属于非法金融活动。'],
+  },
+};
+
+/** 分类 id → 案例 id 列表（预建索引，分类切换零遍历） */
+const CATEGORY_INDEX = CASE_CATEGORIES.reduce((idx, c) => {
+  idx[c.id] = Object.values(CASES).filter((x) => x.catId === c.id).map((x) => x.id);
+  return idx;
+}, {});
+
+/** @param {string} id @returns {any|null} */
+function getCase(id) {
+  return CASES[id] || null;
+}
+
+/** @param {string} catId @returns {any[]} */
+function casesOfCategory(catId) {
+  return (CATEGORY_INDEX[catId] || []).map((id) => CASES[id]);
+}
+
+/** @param {string} catId @returns {any|null} */
+function getCategory(catId) {
+  return CASE_CATEGORIES.find((c) => c.id === catId) || null;
+}
+/* ===== engine/library.js ===== */
+/**
+ * 案例库检索引擎 · 纯函数集合（可单测，无副作用）
+ *
+ * 一条硬性设计约束（对应需求「搜索结果不受当前分类筛选状态影响」）：
+ *   searchCases() 的输入只有「关键词」，完全不接收分类参数。
+ *   也就是说，搜索永远在全量案例范围内匹配 —— 这不是靠调用方自觉，
+ *   而是靠函数签名从类型层面就不允许传入分类。
+ */
+
+/**
+ * 归一化：转小写 + 把连续空白折叠为单个空格。
+ * 注意不能删掉空白——多关键词搜索靠空格分词，全删会让「安全账户 转账」
+ * 变成一个不存在的词，导致多关键词搜索整体失效。
+ */
+function normalize(s) {
+  return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * 单条案例的可搜索文本（标题/摘要/分类/标签/正文各处）。
+ * 用一个数组而不是长串拼接，是为了在测试里能直接断言某个词来自哪个字段。
+ */
+function searchableFields(c) {
+  const cat = CASE_CATEGORIES.find((x) => x.id === c.catId);
+  return [
+    c.title,
+    c.summary,
+    cat ? cat.name : '',
+    (c.tags || []).join(' '),
+    (c.method || []).join(' '),
+    (c.say || []).join(' '),
+    (c.cracks || []).join(' '),
+    (c.action || []).join(' '),
+  ].map(normalize);
+}
+
+/**
+ * 关键词搜索。全量匹配，不受任何分类筛选影响。
+ * 支持空格分隔多关键词（AND 关系）。
+ * @param {string} keyword
+ * @param {any[]} [pool] 仅测试用；产品代码不要传，避免误把搜索限定到某个子集
+ * @returns {any[]}
+ */
+function searchCases(keyword, pool) {
+  const source = pool || Object.values(CASES);
+  const keys = normalize(keyword).split(' ').filter(Boolean);
+  if (keys.length === 0) return source.slice();
+  return source.filter((c) => {
+    const hay = searchableFields(c).join(' ');
+    return keys.every((k) => hay.includes(k));
+  });
+}
+
+/**
+ * 按分类取案例。catId 为 null/'all' 时返回全部。
+ * @param {string|null} catId
+ */
+function casesByCategory(catId) {
+  if (!catId || catId === 'all') return Object.values(CASES);
+  return (CATEGORY_INDEX[catId] || []).map((id) => CASES[id]);
+}
+
+/**
+ * 组合筛选：分类 + 关键词。此处关键词仍然作用于「该分类的子集」，
+ * 这是分类页内的正常语义；跨分类的全局搜索请用 searchCases()。
+ * @param {string|null} catId
+ * @param {string} keyword
+ */
+function filterCases(catId, keyword) {
+  return searchCases(keyword, casesByCategory(catId));
+}
+
+/** 排序：按日期倒序（同日按 id 稳定排序，保证可复现） */
+function sortByDateDesc(list) {
+  return list.slice().sort((a, b) => (a.date === b.date ? a.id.localeCompare(b.id) : a.date < b.date ? 1 : -1));
+}
+
+/**
+ * 分页切片。纯计算，越界时返回空数组而非抛错。
+ * @param {any[]} list
+ * @param {number} page 从 1 开始
+ * @param {number} pageSize
+ */
+function paginate(list, page = 1, pageSize = 6) {
+  const size = Math.max(1, Math.floor(pageSize) || 1);
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / size));
+  const p = Math.min(Math.max(1, Math.floor(page) || 1), totalPages);
+  const start = (p - 1) * size;
+  return { items: list.slice(start, start + size), page: p, totalPages, total, pageSize: size };
+}
+
+/**
+ * 分类统计：案例数、危险度分布。用于分类网格上的角标。
+ * @returns {{id:string,name:string,count:number,high:number}[]
+ */
+function categoryStats() {
+  return CASE_CATEGORIES.map((c) => {
+    const list = (CATEGORY_INDEX[c.id] || []).map((id) => CASES[id]);
+    return {
+      id: c.id,
+      name: c.name,
+      count: list.length,
+      high: list.filter((x) => x.severity === '高危').length,
+    };
+  });
+}
+
+/** 格式化为 YYYY-MM-DD */
+function formatDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  return m ? `${m[1]}年${m[2]}月${m[3]}日` : String(iso || '');
+}
+
+const $ = (id) => document.getElementById(id);
+
+/* ══════════════ 顶层路由 ══════════════ */
+const SCREENS = ['s-home', 's-library', 's-drill'];
+function goto(name) {
+  SCREENS.forEach((s) => $(s).classList.toggle('on', s === name));
+  window.scrollTo(0, 0);
+  if (name === 's-library') renderLibrary();
+}
+
+/* ══════════════ 案例库 ══════════════
+ * 状态三件套：搜索词 / 当前分类 / 当前页码。
+ * 关键约定（对应需求）：搜索永远作用于全库，因此这里调用的是
+ * searchCases(keyword)，而不是 filterCases(catId, keyword)。
+ * 分类只决定「浏览范围」，不参与搜索——搜索框下的提示会明说这一点。
+ */
+const libState = { keyword: '', catId: null, page: 1, pageSize: 6 };
+const PAGE_BTNS = 5; // 分页条最多显示的页码按钮数
+
+function libSource() {
+  // 有搜索词 → 全库搜索（不受 catId 影响）；无搜索词 → 按分类浏览
+  return libState.keyword.trim()
+    ? searchCases(libState.keyword)
+    : casesByCategory(libState.catId);
+}
+
+function renderHeroStats() {
+  const stats = categoryStats();
+  const total = stats.reduce((a, b) => a + b.count, 0);
+  const high = stats.reduce((a, b) => a + b.high, 0);
+  $('heroStats').innerHTML = `
+    <div class="stat"><b>${CASE_CATEGORIES.length}</b><span>诈骗类型</span></div>
+    <div class="stat"><b>${total}</b><span>案例总数</span></div>
+    <div class="stat"><b>${high}</b><span>高危案例</span></div>
+    <div class="stat"><b>${SCENARIO_LIST.length}</b><span>互动剧本</span></div>`;
+}
+
+function renderCats() {
+  const stats = categoryStats();
+  const all = `<button class="cat ${libState.catId === null ? 'on' : ''}" data-cat="">
+      <div class="top"><span class="ico">📚</span><span class="nm">全部分类</span></div>
+      <div class="n">${stats.reduce((a, b) => a + b.count, 0)} 条案例</div>
+      <div class="blurb">按发布时间浏览全部收录案例</div>
+    </button>`;
+  $('libCats').innerHTML = all + CASE_CATEGORIES.map((c) => {
+    const s = stats.find((x) => x.id === c.id);
+    return `<button class="cat ${libState.catId === c.id ? 'on' : ''}" data-cat="${c.id}">
+      <div class="top"><span class="ico">${c.icon}</span><span class="nm">${c.name}</span></div>
+      <div class="n">${s.count} 条${s.high ? ` · <span class="high">${s.high} 高危</span>` : ''}</div>
+      <div class="blurb">${c.blurb}</div>
+    </button>`;
+  }).join('');
+  $('libCats').querySelectorAll('.cat').forEach((el) => {
+    el.onclick = () => {
+      libState.catId = el.dataset.cat || null;
+      libState.page = 1;
+      renderLibrary();
+    };
+  });
+}
+
+function caseCard(c) {
+  const cat = getCategory(c.catId);
+  const sevCls = 'sev ' + c.severity;
+  return `<article class="case" data-id="${c.id}">
+    <button class="case-head">
+      <div class="meta">
+        <span class="chip cattag">${cat.icon} ${cat.name}</span>
+        <span class="chip ${sevCls}">${c.severity}</span>
+        <span class="chip">${formatDate(c.date)}</span>
+      </div>
+      <h4>${c.title}</h4>
+      <p class="sum">${c.summary}</p>
+      <span class="chev">展开完整内容 ▾</span>
+    </button>
+    <div class="case-body">
+      <div class="blk"><h5>🔍 手法拆解</h5><ol>${c.method.map((m) => `<li>${m}</li>`).join('')}</ol></div>
+      <div class="blk say"><h5>🗣 典型话术</h5>${c.say.map((s) => `<div class="quote">${s}</div>`).join('')}</div>
+      <div class="blk crack"><h5>⚠ 破绽在哪</h5><ul>${c.cracks.map((x) => `<li>${x}</li>`).join('')}</ul></div>
+      <div class="blk act"><h5>🛡 遇到了怎么办</h5><ul>${c.action.map((x) => `<li>${x}</li>`).join('')}</ul></div>
+      <div class="tags">${(c.tags || []).map((t) => `<span class="tag-s">#${t}</span>`).join('')}</div>
+    </div>
+  </article>`;
+}
+
+function renderPager(page, totalPages) {
+  if (totalPages <= 1) { $('libPager').innerHTML = ''; return; }
+  const nums = [];
+  const half = Math.floor(PAGE_BTNS / 2);
+  let start = Math.max(1, page - half);
+  const end = Math.min(totalPages, start + PAGE_BTNS - 1);
+  start = Math.max(1, end - PAGE_BTNS + 1);
+  for (let i = start; i <= end; i++) nums.push(i);
+  $('libPager').innerHTML = `
+    <button ${page === 1 ? 'disabled' : ''} data-go="${page - 1}">上一页</button>
+    ${nums.map((n) => `<button class="pg ${n === page ? 'on' : ''}" data-go="${n}">${n}</button>`).join('')}
+    <button ${page === totalPages ? 'disabled' : ''} data-go="${page + 1}">下一页</button>`;
+  $('libPager').querySelectorAll('button[data-go]').forEach((el) => {
+    el.onclick = () => { libState.page = Number(el.dataset.go); renderLibrary(); };
+  });
+}
+
+function renderLibrary() {
+  renderCats();
+  const kw = libState.keyword.trim();
+  const list = sortByDateDesc(libSource());
+  const { items, page, totalPages, total } = paginate(list, libState.page, libState.pageSize);
+  libState.page = page;
+
+  const cat = libState.catId ? getCategory(libState.catId) : null;
+  $('libCrumb').innerHTML =
+    `<span>位置：</span><b>全部案例</b>${cat ? ` › <b>${cat.name}</b>` : ''}`;
+  $('libCount').innerHTML = kw
+    ? `在全库 ${casesByCategory(null).length} 条案例中匹配到 <b style="color:var(--ink)">${total}</b> 条`
+    : `共 <b style="color:var(--ink)">${total}</b> 条案例`;
+
+  $('libCases').innerHTML = items.length
+    ? items.map(caseCard).join('')
+    : `<div class="empty"><div class="big">🔍</div>
+        <div>没有匹配「${kw}」的案例</div>
+        <div style="font-size:12.5px;margin-top:6px">换个关键词试试，比如「验证码」「安全账户」「兼职」</div></div>`;
+
+  $('libCases').querySelectorAll('.case-head').forEach((el) => {
+    el.onclick = () => el.parentElement.classList.toggle('open');
+  });
+  renderPager(page, totalPages);
+}
+
+function setKeyword(v) {
+  libState.keyword = v;
+  libState.page = 1;              // 换关键词回到第一页，符合直觉
+  $('libSearchClear').classList.toggle('on', !!v);
+  renderLibrary();
+}
+
+$('libSearch').addEventListener('input', (e) => setKeyword(e.target.value));
+$('libSearchClear').onclick = () => { $('libSearch').value = ''; setKeyword(''); $('libSearch').focus(); };
+$('goLibrary').onclick = () => goto('s-library');
+$('goDrill').onclick = () => goto('s-drill');
+$('libBack').onclick = () => goto('s-home');
+$('drillBack').onclick = () => goto('s-home');
+
+/* ============ 设置（AI 引擎） ============ */
+const AI_STORE_KEY = 'scamsim.ai.v1';
+let aiCfg = { enabled: false, baseUrl: '', apiKey: '', model: '', temperature: 0.9 };
+
+function loadAI() {
+  try {
+    const raw = localStorage.getItem(AI_STORE_KEY);
+    if (raw) aiCfg = Object.assign(aiCfg, JSON.parse(raw));
+  } catch (e) { /* 本地存储不可用时保持默认 */ }
+}
+function saveAI() {
+  try { localStorage.setItem(AI_STORE_KEY, JSON.stringify(aiCfg)); } catch (e) { /* 忽略 */ }
+}
+function renderAIFields() {
+  $('aiEnabled').checked = !!aiCfg.enabled;
+  $('aiBase').value = aiCfg.baseUrl || '';
+  $('aiKey').value = aiCfg.apiKey || '';
+  $('aiModel').value = aiCfg.model || '';
+  $('aiTemp').value = aiCfg.temperature ?? 0.9;
+  $('aiFields').classList.toggle('off', !aiCfg.enabled);
+  setAIStatus('配置保存在本机浏览器，仅发往你填写的接口地址。', '');
+}
+/** 当前生效配置：未启用或校验不过时返回 null（自动回落到内置话术） */
+function activeAICfg() {
+  if (!aiCfg.enabled) return null;
+  const cfg = { baseUrl: (aiCfg.baseUrl || '').trim(), apiKey: (aiCfg.apiKey || '').trim(),
+                model: (aiCfg.model || '').trim(), temperature: Number(aiCfg.temperature) || 0.9 };
+  return validateSettings(cfg).ok ? cfg : null;
+}
+function setAIStatus(text, cls) {
+  const el = $('aiStatus');
+  el.textContent = text;
+  el.className = 'hint' + (cls ? ' ' + cls : '');
+}
+function readAIForm() {
+  aiCfg.enabled = $('aiEnabled').checked;
+  aiCfg.baseUrl = $('aiBase').value.trim();
+  aiCfg.apiKey = $('aiKey').value.trim();
+  aiCfg.model = $('aiModel').value.trim();
+  const t = Number($('aiTemp').value);
+  aiCfg.temperature = Number.isFinite(t) ? Math.min(2, Math.max(0, t)) : 0.9;
+  saveAI();
+}
+$('aiEnabled').addEventListener('change', () => { readAIForm(); renderAIFields(); });
+['aiBase','aiKey','aiModel','aiTemp'].forEach(id =>
+  $(id).addEventListener('change', () => { readAIForm(); }));
+$('aiClear').onclick = () => {
+  aiCfg = { enabled: false, baseUrl: '', apiKey: '', model: '', temperature: 0.9 };
+  saveAI(); renderAIFields();
+  setAIStatus('已清空配置。', '');
+};
+$('aiTest').onclick = async () => {
+  readAIForm();
+  const cfg = activeAICfg();
+  if (!cfg) {
+    const v = validateSettings({ baseUrl: aiCfg.baseUrl, apiKey: aiCfg.apiKey, model: aiCfg.model });
+    setAIStatus('无法测试：' + v.errors.join('；'), 'err');
+    return;
+  }
+  setAIStatus('测试中…', '');
+  try {
+    const r = await callChat(cfg, [
+      { role: 'system', content: '你只需要回复两个字：可用' },
+      { role: 'user', content: '连接测试' },
+    ], { timeoutMs: 15000 });
+    setAIStatus('连接成功：' + r, 'ok');
+  } catch (err) {
+    setAIStatus('连接失败：' + (err && err.message ? err.message : String(err)), 'err');
+  }
+};
+loadAI(); renderAIFields();
+
+let session = null;
+let selected = SCENARIOS.job.id;
+let typingTimer = null;
+let sending = false;
+
+function show(id) { ['v-home','v-list','v-chat'].forEach(v => $(v).classList.toggle('on', v === id)); }
+function now() { const d = new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function scrollDown() { const s = $('msgScroll'); s.scrollTop = s.scrollHeight; }
+
+function renderCards() {
+  $('cards').innerHTML = SCENARIO_LIST.map(s => `
+    <div class="card ${s.id === selected ? 'sel' : ''}" data-id="${s.id}">
+      <span class="lv">${s.level}</span>
+      <div class="top">
+        <div class="ava" style="background:${s.avatarBg}">${s.avatar}</div>
+        <h3>${s.nickname}</h3>
+      </div>
+      <p>${s.title}<br>${s.intro}</p>
+    </div>`).join('');
+  $('cards').querySelectorAll('.card').forEach(el => {
+    el.onclick = () => { selected = el.dataset.id; renderCards(); };
+  });
+}
+
+function start() {
+  session = new ScamSession(selected);
+  $('msgs').innerHTML = '';
+  $('reportBox').style.display = 'none';
+  $('alertBox').innerHTML = '';
+  $('reportBtn').style.display = 'none';
+  $('monitor').style.display = '';
+  $('picker').style.display = 'none';
+  $('userInput').disabled = false; $('sendBtn').disabled = false; $('blockBtn').disabled = false;
+  $('peerName').textContent = session.sc.contact.nickname;
+  $('mPeer').textContent = session.sc.contact.nickname;
+  $('mStage').textContent = session.stage.name;
+  updateScore(0);
+
+  // 生成微信好友列表：诈骗方置顶 + 若干无关好友做真实感
+  const filler = [
+    { n: '妈妈', a: '妈', c: '#e07a9a', t: '记得按时吃饭', u: 0 },
+    { n: '张三（同事）', a: '张', c: '#4a90d9', t: '明天的会改到十点了', u: 1 },
+    { n: '外卖提醒', a: '外', c: '#8b8b8b', t: '您的订单已送达', u: 0 },
+  ];
+  const peer = session.sc.contact;
+  const rows = [peer, ...filler];
+  $('chatList').innerHTML = rows.map((r, i) => `
+    <div class="row" data-i="${i}">
+      <div class="ava" style="background:${r.avatarBg || r.c}">${r.avatar || r.a}</div>
+      <div class="meta">
+        <div class="n"><span>${r.nickname || r.n}</span>${r.unread ? `<span class="badge">${r.unread}</span>` : ''}</div>
+        <div class="t">${r.lastMsg || r.t}</div>
+      </div>
+    </div>`).join('');
+  $('chatList').querySelectorAll('.row').forEach(el => {
+    el.onclick = () => { if (+el.dataset.i === 0) openChat(); };
+  });
+  $('clock').textContent = now();
+  show('v-list');
+}
+
+function openChat() {
+  show('v-chat');
+  session.transcript.forEach(m => renderMsg(m, false));
+  scrollDown();
+  $('userInput').focus();
+}
+
+function renderMsg(m, animate) {
+  const box = document.createElement('div');
+  if (m.role === 'system') {
+    box.className = 'sys' + (m.kind === 'link' ? ' link' : '');
+    box.textContent = m.text;
+  } else if (m.role === 'me') {
+    box.className = 'msg me';
+    box.innerHTML = `<div class="bubble"></div>`;
+    box.querySelector('.bubble').textContent = m.text;
+  } else {
+    box.className = 'msg';
+    const c = session.sc.contact;
+    box.innerHTML = `<div class="ava" style="background:${c.avatarBg}">${c.avatar}</div><div class="bubble"></div>`;
+    box.querySelector('.bubble').textContent = m.text;
+  }
+  $('msgs').appendChild(box);
+  scrollDown();
+  return box;
+}
+
+function renderStage(name) {
+  const d = document.createElement('div');
+  d.className = 'stage';
+  d.textContent = name;
+  $('msgs').appendChild(d);
+  scrollDown();
+}
+
+function showTyping() {
+  const c = session.sc.contact;
+  const d = document.createElement('div');
+  d.className = 'typing';
+  d.innerHTML = `<div class="ava" style="background:${c.avatarBg}">${c.avatar}</div><div class="bubble">对方正在输入…</div>`;
+  $('msgs').appendChild(d);
+  scrollDown();
+  return d;
+}
+
+function updateScore(score) {
+  $('mScore').textContent = score;
+  const bar = $('mBar');
+  bar.style.width = Math.min(score, 100) + '%';
+  bar.style.background = score >= 70 ? 'var(--red)' : score >= 40 ? 'var(--amber)' : 'var(--green)';
+  $('mStage').textContent = session.stage.name;
+}
+
+function send() {
+  const v = $('userInput').value.trim();
+  if (!v || !session || session.finished || sending) return;
+  sending = true;
+  $('sendBtn').disabled = true;
+  $('userInput').value = '';
+  renderMsg({ role: 'me', text: sanitize(v) }, true);
+
+  const typing = showTyping();
+  const cfg = activeAICfg();
+  $('mEngine').textContent = cfg ? 'AI 生成（规则控场）' : '内置知识库话术';
+
+  session
+    .handleAsync(v, cfg)
+    .then((r) => {
+      typing.remove();
+      r.messages.forEach((m, i) => {
+        if (m.stage && i === r.messages.length - 1) renderStage('— ' + m.stage + ' —');
+        renderMsg(m, true);
+      });
+      $('alertBox').innerHTML = [
+        r.note ? '<div class="alert warn">' + r.note + '</div>' : '',
+        r.alert ? '<div class="alert ' + r.alert.level + '">' + r.alert.text + '</div>' : '',
+      ].join('');
+      updateScore(r.score);
+      if (r.type === 'terminate') {
+        $('userInput').disabled = true; $('sendBtn').disabled = true;
+        $('reportBtn').style.display = '';
+        renderStage('对话结束');
+      }
+    })
+    .catch((err) => {
+      typing.remove();
+      $('alertBox').innerHTML = '<div class="alert danger">处理失败：' + (err && err.message ? err.message : String(err)) + '</div>';
+      updateScore(session.report().score);
+    })
+    .finally(() => {
+      sending = false;
+      if (!$('userInput').disabled) $('sendBtn').disabled = false;
+    });
+}
+
+function finish() {
+  const rep = session.report();
+  $('reportBtn').style.display = 'none';
+  $('reportBox').style.display = '';
+  const reached = new Set(rep.transcript.filter(m => m.stage && /^[一二三四]、/.test(m.stage)).map(m => m.stage));
+  const stageRows = rep.scenario.stages.map((st) => `
+    <tr><td>${reached.has(st.name) ? '✅ 已到达' : '⬜ 未到达'} ${st.name}</td>
+    <td>${st.goal}</td><td><b>建议：</b>${st.advice}</td></tr>`).join('');
+  const flags = rep.scenario.stages.filter(s => reached.has(s.name)).flatMap(s => s.redFlags).map(f => '<li>' + f + '</li>').join('');
+  const riskTags = rep.risks.length
+    ? rep.risks.map(r => '<span class="tag">' + RISK_LABELS[r] + '</span>').join('')
+    : '<span class="tag" style="background:#e6f4ea;color:var(--green)">未出现危险行为</span>';
+
+  $('reportBox').innerHTML = `
+    <div class="report">
+    <h2>演练复盘报告</h2>
+    <p class="hint" style="margin:0">好友「${rep.contact.nickname}」· ${rep.scenario.title} · ${rep.turns} 轮对话 · 顺从 ${rep.complied} 次</p>
+    <div class="kv" style="margin-top:10px"><span>风险指数</span>
+      <span style="color:${rep.color};font-weight:700">${rep.score} / 100 · ${rep.level}</span></div>
+    <div class="meter"><i style="width:${rep.score}%;background:${rep.color}"></i></div>
+    <p style="margin:10px 0 4px"><b>结论：</b>${rep.advice}</p>
+    <p style="margin:4px 0"><b>本案手法：</b>${rep.scenario.background}</p>
+
+    <h4 style="margin:16px 0 4px">你暴露的风险行为</h4>
+    <div>${riskTags}</div>
+    ${rep.riskLog.length ? '<table><tr><th>轮次</th><th>行为</th></tr>' +
+      rep.riskLog.map(r => '<tr><td>第 ' + r.turn + ' 轮</td><td>' + r.label + '</td></tr>').join('') + '</table>' : ''}
+
+    <h4 style="margin:16px 0 4px">阶段推进复盘</h4>
+    <table><tr><th style="width:30%">阶段</th><th style="width:30%">对方想要什么</th><th>防范要点</th></tr>${stageRows}</table>
+
+    <h4 style="margin:16px 0 4px">你走过的阶段里存在的破绽</h4>
+    <ul class="rf">${flags}</ul>
+
+    <details style="margin-top:14px"><summary>查看完整聊天记录</summary>
+      <div>${rep.transcript.map(m => {
+        const who = m.role === 'scammer' ? '对方' : m.role === 'me' || m.role === 'victim' ? '我' : '· 系统 ·';
+        return `<p style="margin:4px 0"><b>${who}</b>：${m.text.replace(/\n/g,'<br>')}</p>`;
+      }).join('')}</div>
+    </details>
+    <div style="margin-top:14px"><button class="primary" id="againBtn">换个剧本再来一次</button></div>
+    </div>`;
+  $('againBtn').onclick = () => {
+    $('picker').style.display = ''; $('monitor').style.display = 'none';
+    $('reportBox').style.display = 'none'; renderCards();
+  };
+}
+
+$('startBtn').onclick = start;
+$('sendBtn').onclick = send;
+$('reportBtn').onclick = finish;
+$('backBtn').onclick = () => show('v-list');
+$('blockBtn').onclick = () => { $('userInput').value = '我要拉黑你并报警'; send(); };
+$('userInput').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+$('app-wechat').onclick = () => {
+  if (!session) { $('homeHint').textContent = '请先在右侧选择剧本并点「生成微信好友」。'; return; }
+  show('v-list');
+};
+renderCards();
+renderHeroStats();
+$('clock').textContent = now();
+</script>
+</body>
+</html>
