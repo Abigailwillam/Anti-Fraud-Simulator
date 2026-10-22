@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>反诈演练 · 案例库与互动模式</title>
+<style>
+  :root{
+    --bg:#eef0f4; --panel:#ffffff; --line:#e3e6ec; --ink:#1b1f27; --muted:#5d6472;
+    --blue:#1a6dff; --blue-soft:#eaf1ff; --red:#d93025; --amber:#e08600; --green:#1e8e3e;
+    --wx-green:#07c160; --radius:14px; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 "PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px}
+  header h1{margin:0 0 6px;font-size:20px}
+  header p{margin:0 0 16px;font-size:13px;color:var(--muted)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+  .layout{display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start}
+  @media(max-width:940px){.layout{grid-template-columns:1fr}}
+
+  /* ============ 顶层路由 ============ */
+  .screen{display:none}
+  .screen.on{display:block}
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .backlink{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);
+    background:var(--panel);color:var(--ink);border-radius:99px;padding:7px 14px;
+    font:inherit;font-size:13px;cursor:pointer}
+  .backlink:hover{border-color:var(--blue);color:var(--blue)}
+
+  /* ============ 首页 ============ */
+  .hero{padding:34px 30px;border-radius:20px;margin-bottom:18px;
+    background:linear-gradient(135deg,#1a3a8f 0%,#1a6dff 52%,#4f9bff 100%);color:#fff;
+    box-shadow:0 12px 32px rgba(26,109,255,.22)}
+  .hero h2{margin:0 0 8px;font-size:26px;letter-spacing:.5px}
+  .hero p{margin:0;opacity:.92;font-size:14px;max-width:640px}
+  .hero .stats{display:flex;gap:26px;margin-top:20px;flex-wrap:wrap}
+  .hero .stat b{display:block;font-size:22px;line-height:1.2}
+  .hero .stat span{font-size:12px;opacity:.85}
+
+  .entries{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+  @media(max-width:760px){.entries{grid-template-columns:1fr}}
+  .entry{position:relative;border:1px solid var(--line);border-radius:18px;padding:26px 24px;
+    background:var(--panel);cursor:pointer;transition:.18s;overflow:hidden;text-align:left;
+    font:inherit;color:inherit;box-shadow:var(--shadow);display:block;width:100%}
+  .entry::after{content:'';position:absolute;inset:0;border-radius:18px;pointer-events:none;
+    background:linear-gradient(135deg,rgba(26,109,255,.05),transparent 55%);opacity:0;transition:.18s}
+  .entry:hover{transform:translateY(-3px);border-color:var(--blue);box-shadow:0 12px 28px rgba(16,24,40,.1)}
+  .entry:hover::after{opacity:1}
+  .entry .badge{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;margin-bottom:14px;background:var(--blue-soft)}
+  .entry h3{margin:0 0 8px;font-size:18px}
+  .entry p{margin:0 0 14px;font-size:13.5px;color:var(--muted);line-height:1.7}
+  .entry ul{margin:0;padding-left:18px;font-size:12.5px;color:var(--muted);line-height:1.9}
+  .entry .go{position:absolute;right:22px;bottom:20px;color:var(--blue);font-size:13px;font-weight:600}
+
+  /* ============ 案例库 ============ */
+  .lib-head{margin-bottom:14px}
+  .lib-head h2{margin:0 0 4px;font-size:19px}
+  .lib-head p{margin:0;font-size:13px;color:var(--muted)}
+  .searchbar{position:relative;margin-bottom:14px}
+  .searchbar input{width:100%;padding:12px 40px 12px 40px;border:1px solid var(--line);
+    border-radius:12px;font:inherit;font-size:14px;background:var(--panel)}
+  .searchbar input:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,109,255,.12)}
+  .searchbar .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px}
+  .searchbar .clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;
+    background:#eceef2;color:var(--muted);border-radius:50%;width:22px;height:22px;cursor:pointer;
+    font-size:13px;line-height:1;display:none}
+  .searchbar .clear.on{display:block}
+
+  .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+  /* 分类卡片的宽高内容为 flex 布局，避免 grid 尺寸塌陷 */
+  .cat{min-width:0}
+  .cat{border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:var(--panel);
+    cursor:pointer;transition:.15s;text-align:left;font:inherit;color:inherit}
+  .cat:hover{border-color:var(--blue);transform:translateY(-2px)}
+  .cat.on{background:var(--blue-soft);border-color:var(--blue)}
+  .cat .top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .cat .ico{font-size:17px}
+  .cat .nm{font-size:14px;font-weight:600}
+  .cat .n{font-size:11.5px;color:var(--muted)}
+  .cat .high{color:var(--red);font-weight:600}
+  .cat .blurb{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:5px}
+
+  .cases{display:grid;gap:12px;margin-top:14px}
+  .case{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+  .case-head{width:100%;border:0;background:transparent;padding:15px 16px;cursor:pointer;
+    text-align:left;font:inherit;color:inherit;display:block}
+  .case-head:hover{background:#fafbfc}
+  .case .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:7px}
+  .chip{font-size:11.5px;padding:2px 8px;border-radius:6px;background:#f1f3f6;color:var(--muted)}
+  .chip.cattag{background:var(--blue-soft);color:var(--blue)}
+  .chip.sev{background:#fdecea;color:var(--red)}
+  .chip.sev.中高危{background:#fff4e5;color:var(--amber)}
+  .chip.sev.中危{background:#fff9db;color:#a16207}
+  .chip.sev.低危{background:#e6f4ea;color:var(--green)}
+  .case h4{margin:0 0 6px;font-size:15.5px;line-height:1.5}
+  .case .sum{margin:0;font-size:13px;color:var(--muted);line-height:1.7}
+  .case .chev{color:var(--muted);font-size:12px;transition:.2s;display:inline-block;margin-top:8px}
+  .case.open .chev{transform:rotate(180deg)}
+  .case-body{display:none;padding:0 16px 16px;border-top:1px dashed var(--line);margin-top:12px}
+  .case.open .case-body{display:block}
+  .blk{margin-top:14px}
+  .blk h5{margin:0 0 7px;font-size:13.5px;display:flex;align-items:center;gap:6px}
+  .blk ol,.blk ul{margin:0;padding-left:20px;font-size:13.5px;line-height:1.85;color:#333}
+  .blk.say li{color:#8a4b00}
+  .blk.say h5{color:#a16207}
+  .blk.crack h5{color:var(--red)} .blk.crack li{color:#7a2620}
+  .blk.act h5{color:var(--green)} .blk.act li{color:#1c5c33}
+  .quote{background:#fffaf0;border-left:3px solid #f0b429;padding:8px 12px;border-radius:0 8px 8px 0;
+    margin:6px 0;font-size:13.5px;color:#7a4a00}
+  .tags{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
+  .tag-s{font-size:11.5px;color:var(--muted);background:#f1f3f6;border-radius:6px;padding:2px 8px}
+
+  .empty{text-align:center;padding:44px 20px;color:var(--muted)}
+  .empty .big{font-size:34px;margin-bottom:10px}
+  .pager{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:18px;flex-wrap:wrap}
+  .pager button{border:1px solid var(--line);background:var(--panel);border-radius:9px;
+    padding:7px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+  .pager button:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+  .pager button:disabled{opacity:.4;cursor:not-allowed}
+  .pager .pg{min-width:32px;text-align:center;font-size:13px;padding:7px 8px;border-radius:9px;
+    border:1px solid transparent;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit}
+  .pager .pg.on{background:var(--blue);color:#fff}
+  .result-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    flex-wrap:wrap;margin-top:16px;font-size:13px;color:var(--muted)}
+  .crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+  .crumb b{color:var(--ink)}
+  @media(max-width:640px){
+    .wrap{padding:14px}
+    .hero{padding:24px 20px}
+    .hero h2{font-size:21px}
+    .cats{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+    .case .meta{gap:6px}
+    /* 手机外壳改为撑满可用宽度，避免固定 390px 在窄屏溢出 */
+    .phone{width:100%;max-width:414px;height:auto;aspect-ratio:390/800;padding:10px;
+      border-radius:36px}
+    .screen-phone{border-radius:28px}
+    .notch{width:34%;height:22px}
+    .statusbar{height:38px}
+    .wx-head{height:86px;padding-top:38px}
+    /* 侧栏与手机不再并排，改纵向堆叠 */
+    .row2{grid-template-columns:1fr}
+  }
+
+  /* ============ 手机外壳 ============ */
+  .phone{width:390px;height:800px;margin:0 auto;background:#111;border-radius:44px;
+    padding:12px;box-shadow:0 24px 60px rgba(16,24,40,.22),0 0 0 2px #2a2f3a;position:relative}
+  .screen-phone{width:100%;height:100%;background:#000;border-radius:34px;overflow:hidden;position:relative}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;
+    background:#000;border-radius:0 0 18px 18px;z-index:99}
+  .statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:12px;color:#fff;position:absolute;top:0;left:0;right:0;z-index:98;
+    pointer-events:none;font-weight:600}
+  .view{position:absolute;inset:0;display:none;flex-direction:column;background:#fff}
+  .view.on{display:flex}
+
+  /* ============ 桌面 ============ */
+  .home{background:linear-gradient(160deg,#5b7cfa 0%,#8e6ef5 40%,#f093a8 100%)}
+  .home-top{padding:52px 22px 8px;color:#fff}
+  .home-top h2{margin:0;font-size:22px}
+  .home-top p{margin:4px 0 0;font-size:12px;opacity:.85}
+  .apps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;padding:20px 14px}
+  .app{text-align:center;color:#fff;font-size:11px;cursor:default}
+  .app .ico{width:56px;height:56px;border-radius:14px;margin:0 auto 6px;display:flex;
+    align-items:center;justify-content:center;font-size:26px;background:rgba(255,255,255,.2)}
+  .app.wechat .ico{background:linear-gradient(160deg,#4ade80,#07c160)}
+  .app.dim{opacity:.55}
+  .home-hint{margin:auto 16px 16px;background:rgba(255,255,255,.16);backdrop-filter:blur(6px);
+    color:#fff;border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.6}
+  .homebar{height:22px;display:flex;align-items:center;justify-content:center}
+  .homebar i{width:130px;height:5px;border-radius:99px;background:currentColor;opacity:.35;display:block}
+
+  /* ============ 微信 ============ */
+  .wx-head{height:92px;padding-top:44px;background:#ededed;border-bottom:.5px solid #d9d9d9;
+    display:flex;align-items:center;padding-left:14px;font-size:16px;font-weight:600;flex:0 0 auto}
+  .wx-head .back{width:22px;font-size:20px;margin-right:6px;cursor:pointer;color:#333}
+  .wx-body{flex:1;overflow-y:auto;background:#ededed}
+  .chats .row{display:flex;gap:12px;padding:12px 14px;align-items:center;cursor:pointer;
+    border-bottom:.5px solid #e3e3e3;background:#fff}
+  .chats .row:active{background:#d9d9d9}
+  .ava{width:46px;height:46px;border-radius:6px;flex:0 0 auto;display:flex;align-items:center;
+    justify-content:center;color:#fff;font-size:19px;font-weight:500}
+  .chats .meta{flex:1;min-width:0}
+  .chats .n{font-size:15px;margin-bottom:2px;display:flex;justify-content:space-between}
+  .chats .t{font-size:12.5px;color:#8c8c8c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .badge{background:var(--red);color:#fff;font-size:11px;border-radius:99px;padding:0 6px;height:17px;
+    line-height:17px;min-width:17px;text-align:center}
+  .wx-foot{height:56px;padding:8px 10px;background:#f7f7f7;border-top:.5px solid #d9d9d9;
+    display:flex;gap:8px;align-items:center;flex:0 0 auto}
+  .wx-foot input{flex:1;padding:9px 11px;border:0;border-radius:6px;background:#fff;font:inherit;font-size:14px}
+  .wx-foot .send{background:var(--wx-green);color:#fff;border:0;border-radius:6px;padding:9px 14px;
+    font:inherit;font-size:14px;cursor:pointer}
+  .wx-foot .blk{background:#fff;border:1px solid #d0d0d0;border-radius:6px;padding:9px 12px;
+    font:inherit;font-size:13px;cursor:pointer;color:#555}
+
+  /* 聊天气泡 */
+  .msgs{padding:14px 12px 20px;display:flex;flex-direction:column;gap:14px}
+  .sys{align-self:center;background:rgba(0,0,0,.06);color:#666;font-size:11.5px;padding:4px 10px;
+    border-radius:5px;max-width:88%;text-align:center}
+  .sys.link{background:#fff;border:1px solid #e0e0e0;color:#333}
+  .msg{display:flex;gap:8px;max-width:82%;align-items:flex-start}
+  .msg .bubble{background:#fff;padding:9px 12px;border-radius:5px;font-size:14.5px;
+    white-space:pre-wrap;line-height:1.55;word-break:break-word;box-shadow:0 1px 1px rgba(0,0,0,.04)}
+  .msg .ava{width:38px;height:38px;font-size:16px;border-radius:5px}
+  .msg.me{align-self:flex-end;flex-direction:row-reverse}
+  .msg.me .bubble{background:#95ec69}
+  .stage{align-self:center;font-size:11px;color:#999;background:rgba(0,0,0,.04);padding:3px 9px;border-radius:99px}
+  .typing{align-self:flex-start;display:flex;gap:8px;align-items:flex-end}
+  .typing .bubble{color:#888;font-style:italic}
+
+  /* 侧栏 */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;transition:.15s;background:#fff}
+  .card:hover{border-color:var(--blue);transform:translateY(-2px)}
+  .card.sel{border-color:var(--blue);background:var(--blue-soft)}
+  .card .top{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+  .card h3{margin:0;font-size:14.5px}
+  .card .lv{font-size:11.5px;color:var(--red);font-weight:600;display:block;margin-bottom:4px}
+  .card p{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+  .side h3{margin:0 0 10px;font-size:15px}
+  .kv{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .meter{height:8px;background:#e8eaef;border-radius:99px;overflow:hidden}
+  .meter i{display:block;height:100%;transition:.3s}
+  .alert{border-radius:10px;padding:9px 12px;font-size:12.5px;margin:8px 0}
+  .alert.danger{background:#fdecea;color:var(--red);border:1px solid #f5c6c2}
+  .alert.warn{background:#fff6e5;color:var(--amber);border:1px solid #ffe0a3}
+  .tag{display:inline-block;background:#fdecea;color:var(--red);border-radius:6px;padding:2px 8px;
+    font-size:12px;margin:0 6px 6px 0}
+  button.primary{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:10px 16px;
+    font:inherit;font-size:14px;cursor:pointer}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+  th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600}
+  ul.rf{margin:6px 0 0;padding-left:20px}
+  ul.rf li{margin-bottom:4px}
+  details summary{cursor:pointer;font-size:13px;padding:6px 0}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  /* 模型能力提示：颜色区分「能用 / 不能用 / 不确定」 */
+  .hint.ok{color:var(--green)}
+  .hint.warn{color:var(--amber);font-weight:600}
+  .hint.warn button{margin-left:6px}
+  .report h2{margin:0 0 6px;font-size:17px}
+  /* 设置面板 */
+  .switch-row{margin-bottom:8px}
+  .switch{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px}
+  .switch input{display:none}
+  .track{width:38px;height:22px;border-radius:99px;background:#d0d4dc;position:relative;
+    transition:.2s;flex:0 0 auto}
+  .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+    background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .switch input:checked + .track{background:var(--green)}
+  .switch input:checked + .track .knob{left:18px}
+  .switch-label{font-weight:500}
+  .fld{display:block;margin-bottom:8px}
+  .fld span{display:block;font-size:11.5px;color:var(--muted);margin-bottom:3px}
+  .fld input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    font:inherit;font-size:13px;background:#fafbfc}
+  .fld input:focus{outline:0;border-color:var(--blue);background:#fff}
+  .row2{display:grid;grid-template-columns:1fr 100px;gap:8px}
+  .btn-row{display:flex;gap:8px;margin-top:4px}
+  button.ghost{background:#eef0f4;color:var(--ink);border:0;border-radius:8px;
+    padding:8px 12px;font:inherit;font-size:13px;cursor:pointer}
+  button.ghost.sm{padding:7px 12px;font-size:12.5px}
+  .aifields.off{display:none}
+  #aiStatus.ok{color:var(--green)} #aiStatus.err{color:var(--red)}
+  #anaAiStatus.ok{color:var(--green)} #anaAiStatus.err{color:var(--red)}
+  .engine-tag{font-size:11.5px;color:var(--muted);margin-top:6px}
+
+  /* ============ 诈骗辨析 ============ */
+  .drop{border:2px dashed var(--line);border-radius:16px;background:var(--panel);
+    padding:30px 20px;text-align:center;cursor:pointer;transition:.18s}
+  .drop:hover,.drop.drag{border-color:var(--blue);background:var(--blue-soft)}
+  .drop .big{font-size:34px;margin-bottom:8px}
+  .drop .t1{font-size:15px;font-weight:600;margin-bottom:6px}
+  .drop .t2{font-size:12.5px;color:var(--muted);line-height:1.7}
+  .picked{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;
+    border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fafbfc;margin-top:12px}
+  .picked b{font-weight:600}
+  .picked .x{margin-left:auto;border:0;background:#eceef2;color:var(--muted);border-radius:7px;
+    padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+  textarea.chatbox{width:100%;min-height:150px;padding:12px;border:1px solid var(--line);
+    border-radius:12px;font:inherit;font-size:13.5px;line-height:1.7;background:#fafbfc;resize:vertical}
+  textarea.chatbox:focus{outline:0;border-color:var(--blue);background:#fff;
+    box-shadow:0 0 0 3px rgba(26,109,255,.12)}
+  .verdict{border-radius:16px;padding:20px;border:1px solid var(--line);background:var(--panel);
+    box-shadow:var(--shadow)}
+  .verdict.scam{border-color:#f5c6c2;background:#fffafa}
+  .verdict.clean{border-color:#c7e7cf;background:#fbfefc}
+  .verdict.unknown{border-color:var(--line);background:#fafbfc}
+  .verdict .vt{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .verdict .vt h2{margin:0;font-size:24px;letter-spacing:.5px}
+  .verdict .vt .sub{font-size:13px;color:var(--muted)}
+  .verdict .desc{margin:8px 0 0;font-size:13.5px;color:var(--muted)}
+  .verdict .desc b{color:var(--ink)}
+  .sigrow{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;
+    padding:11px 13px;background:#fff;margin-bottom:9px}
+  .sigrow .ic{font-size:19px;flex:0 0 auto}
+  .sigrow .bd{min-width:0;flex:1}
+  .sigrow .nm{font-size:14px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .sigrow .ds{font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:3px}
+  .sigrow .ev{font-size:12px;color:#8a4b00;background:#fffaf0;border-left:3px solid #f0b429;
+    padding:4px 9px;border-radius:0 6px 6px 0;margin-top:6px;word-break:break-word}
+  .sigrow .go{align-self:center;border:1px solid var(--line);background:var(--panel);border-radius:99px;
+    padding:5px 11px;font:inherit;font-size:12px;cursor:pointer;color:var(--blue);white-space:nowrap}
+  .sigrow .go:hover{border-color:var(--blue);background:var(--blue-soft)}
+  .hintbox{border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:13px;
+    line-height:1.8;background:#fafbfc}
+  .hintbox b{display:block;margin-bottom:4px;font-size:13.5px}
+  .err{display:flex;gap:12px;align-items:flex-start;border:1px solid #f5c6c2;background:#fdecea;
+    border-radius:12px;padding:13px 15px;color:#7a2620}
+  .err .ic{font-size:18px;flex:0 0 auto}
+  .err .bd{flex:1;min-width:0}
+  .err .bd b{display:block;margin-bottom:3px;font-size:13.5px}
+  .err .bd p{margin:0;font-size:12.5px;line-height:1.7}
+  .err .bd .btn-row{margin-top:9px}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line);
+    border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted);
+    padding:26px 4px}
+  @media(max-width:940px){.an-grid{grid-template-columns:1fr}}
+  @media(max-width:640px){
+    .drop{padding:22px 14px}
+    .verdict{padding:16px}
+    .verdict .vt h2{font-size:20px}
+    .sigrow{flex-wrap:wrap}
+    .sigrow .go{margin-left:32px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ══════════ 屏幕一：首页 ══════════ -->
+<section class="screen on" id="s-home">
+  <div class="hero">
+    <h2>反诈意识训练</h2>
+    <p>看懂骗局，才谈得上避开它。这里提供三条路径：先在案例库里把常见手法认熟，
+       用辨析功能判断手上的聊天记录，再回到互动模式里亲自和骗子过招。</p>
+    <div class="stats" id="heroStats"></div>
+  </div>
+
+  <div class="entries">
+    <button class="entry" id="goLibrary">
+      <div class="badge">📚</div>
+      <h3>诈骗案例库</h3>
+      <p>按类型查阅真实手法的拆解：它怎么运作、话术长什么样、破绽在哪、遇到了怎么办。</p>
+      <ul>
+        <li>10 大类诈骗类型，覆盖公检法、投资、客服、贷款、杀猪盘等</li>
+        <li>全文关键词搜索，跨分类直接命中</li>
+        <li>每条案例含手法拆解 · 典型话术 · 破绽识别 · 处置建议</li>
+      </ul>
+      <span class="go">进入 →</span>
+    </button>
+
+    <button class="entry" id="goDrill">
+      <div class="badge">💬</div>
+      <h3>互动模式</h3>
+      <p>模拟一部手机，在微信里和那个「好友」聊天。他会按剧本分阶段推进，你以受骗者身份回话。</p>
+      <ul>
+        <li>4 个剧本：冒充公检法、虚假投资、冒充客服、刷单兼职</li>
+        <li>规则引擎实时计算风险指数，识破破绽才算过关</li>
+        <li>可选接入 AI，让对话方按人设现场生成话术</li>
+      </ul>
+      <span class="go">进入 →</span>
+    </button>
+
+    <button class="entry" id="goAnalyze">
+      <div class="badge">🔍</div>
+      <h3>诈骗辨析</h3>
+      <p>把收到的聊天记录丢进来，判断对方是不是骗子：给结论、风险等级、可疑点逐条说明。</p>
+      <ul>
+        <li>支持文本与截图，AI 研判 + 规则引擎双层判定</li>
+        <li>输出冒充身份、诱导转账、索取验证码等具体特征</li>
+        <li>给出可直接照做的防骗建议；未配 AI 时离线规则分析</li>
+      </ul>
+      <span class="go">进入 →</span>
+    </button>
+  </div>
+</section>
+
+<!-- ══════════ 屏幕二：案例库 ══════════ -->
+<section class="screen" id="s-library">
+  <div class="topbar">
+    <button class="backlink" id="libBack">‹ 返回首页</button>
+  </div>
+
+  <div class="panel lib-head">
+    <h2>诈骗案例库</h2>
+    <p>收录目的是让你<b>认出</b>骗局，不是教你实施。每条案例都写清破绽在哪、遇到了怎么办。</p>
+  </div>
+
+  <div class="panel">
+    <!-- 搜索栏：始终作用于全库，不受下方分类筛选影响 -->
+    <div class="searchbar">
+      <span class="ico">🔍</span>
+      <input type="text" id="libSearch" placeholder="搜索案例关键词，如：安全账户、验证码、刷单、涨粉…" />
+      <button class="clear" id="libSearchClear" title="清空">✕</button>
+    </div>
+
+    <div class="result-bar">
+      <div class="crumb" id="libCrumb"></div>
+      <div id="libCount"></div>
+    </div>
+
+    <div class="cats" id="libCats" style="margin-top:14px"></div>
+    <div class="cases" id="libCases"></div>
+    <div class="pager" id="libPager"></div>
+  </div>
+</section>
+
+<!-- ══════════ 屏幕三：互动模式（原样保留） ══════════ -->
+<section class="screen" id="s-drill">
+  <div class="topbar">
+    <button class="backlink" id="drillBack">‹ 返回首页</button>
+  </div>
+
+  <header>
+    <h1>互动模式 · 微信里的诈骗好友</h1>
+    <p>模拟手机界面 → 打开微信 → 和那个「好友」聊天。他就是诈骗方。全程为教学演练，不涉及任何真实资金与个人信息。</p>
+  </header>
+
+  <div class="layout">
+    <!-- 手机 -->
+    <div class="phone">
+      <div class="screen-phone">
+        <div class="notch"></div>
+        <div class="statusbar" id="statusbar"><span id="clock">20:51</span><span>●●● ⌁ ▮</span></div>
+
+        <!-- 桌面 -->
+        <div class="view home on" id="v-home">
+          <div class="home-top"><h2>演练模式</h2><p>先选择剧本，再进入微信</p></div>
+          <div class="apps">
+            <div class="app wechat" id="app-wechat"><div class="ico">💬</div>微信</div>
+            <div class="app dim"><div class="ico">📷</div>相机</div>
+            <div class="app dim"><div class="ico">🧭</div>浏览器</div>
+            <div class="app dim"><div class="ico">⚙️</div>设置</div>
+            <div class="app dim"><div class="ico">📷</div>相册</div>
+            <div class="app dim"><div class="ico">🗓️</div>日历</div>
+            <div class="app dim"><div class="ico">💳</div>支付</div>
+            <div class="app dim"><div class="ico">📮</div>邮件</div>
+          </div>
+          <div class="home-hint" id="homeHint">在右侧选一个诈骗剧本，然后点「微信」图标开始。</div>
+          <div class="homebar" style="color:#fff"><i></i></div>
+        </div>
+
+        <!-- 微信 聊天列表 -->
+        <div class="view" id="v-list">
+          <div class="wx-head">微信</div>
+          <div class="wx-body chats" id="chatList"></div>
+          <div class="wx-foot"><input id="searchInput" placeholder="搜索" disabled /><button class="send" disabled>+</button></div>
+        </div>
+
+        <!-- 微信 聊天窗口 -->
+        <div class="view" id="v-chat">
+          <div class="wx-head"><span class="back" id="backBtn">‹</span><span id="peerName">好友</span></div>
+          <div class="wx-body" id="msgScroll"><div class="msgs" id="msgs"></div></div>
+          <div class="wx-foot">
+            <input id="userInput" placeholder="发消息…" />
+            <button class="blk" id="blockBtn">拉黑</button>
+            <button class="send" id="sendBtn">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 侧栏 -->
+    <div>
+      <section class="panel side" id="picker">
+        <h3>1 · 选择诈骗剧本</h3>
+        <div class="cards" id="cards"></div>
+        <div style="margin-top:14px"><button class="primary" id="startBtn">生成微信好友</button></div>
+        <div class="hint">生成后点手机里的「微信」图标，进入聊天。</div>
+      </section>
+
+      <section class="panel side" id="settings">
+        <h3>设置 · AI 对话引擎</h3>
+        <div class="switch-row">
+          <label class="switch">
+            <input type="checkbox" id="aiEnabled" />
+            <span class="track"><span class="knob"></span></span>
+            <span class="switch-label">启用 AI 生成话术</span>
+          </label>
+        </div>
+        <div class="hint" style="margin:0 0 10px">
+          关闭时使用内置知识库话术（离线可用）。启用后由 AI 按人设现场生成，
+          剧情走向与风险评分仍由规则引擎决定，不受模型影响。
+        </div>
+        <div id="aiFields" class="aifields">
+          <label class="fld"><span>接口地址 Base URL</span>
+            <input type="text" id="aiBase" placeholder="https://api.openai.com/v1" /></label>
+          <label class="fld"><span>API Key</span>
+            <input type="password" id="aiKey" placeholder="sk-..." /></label>
+          <div class="row2">
+            <label class="fld"><span>模型</span>
+              <input type="text" id="aiModel" placeholder="gpt-4o-mini" /></label>
+            <label class="fld"><span>温度 0-2</span>
+              <input type="text" id="aiTemp" placeholder="0.9" /></label>
+          </div>
+          <div class="btn-row">
+            <button class="ghost sm" id="aiTest">测试连接</button>
+            <button class="ghost sm" id="aiClear">清空</button>
+          </div>
+          <div class="hint" id="aiModelHint"></div>
+          <div class="hint" id="aiStatus">配置存在本机浏览器，不会上传到除你填写的接口地址外的任何地方。</div>
+          <div class="hint" style="margin-top:6px">
+            连接参数与「诈骗辨析」共用同一份配置，在任一处修改都会同步到另一处。
+          </div>
+        </div>
+      </section>
+
+      <section class="panel side" id="monitor" style="display:none">
+        <h3>实时监控</h3>
+        <div class="kv"><span>对方身份</span><span id="mPeer" style="color:var(--ink);font-weight:600"></span></div>
+        <div class="kv"><span>当前阶段</span><span id="mStage" style="color:var(--ink)"></span></div>
+        <div class="kv"><span>对话引擎</span><span id="mEngine" style="color:var(--ink)">内置知识库话术</span></div>
+        <div class="kv"><span>风险指数</span><span id="mScore">0</span></div>
+        <div class="meter"><i id="mBar" style="width:0%;background:var(--green)"></i></div>
+        <div id="alertBox"></div>
+        <div class="hint">想提前结束：在聊天框输入「我要报警」，或点「拉黑」，然后在下方报告里查看复盘。</div>
+        <button class="primary" id="reportBtn" style="width:100%;margin-top:12px;display:none">生成复盘报告</button>
+      </section>
+
+      <section class="panel report" id="reportBox" style="display:none"></section>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 屏幕四：诈骗辨析 ══════════ -->
+<section class="screen" id="s-analyze">
+  <div class="topbar">
+    <button class="backlink" id="anaBack">‹ 返回首页</button>
+  </div>
+
+  <header>
+    <h1>诈骗辨析 · 这段聊天是不是骗局</h1>
+    <p>上传聊天记录或截图，得出结论、风险等级、可疑点与防骗建议。
+       结论由规则引擎与 AI 共同判定，AI 未配置时自动走离线规则分析。</p>
+  </header>
+
+  <div class="layout">
+    <!-- 左：输入 -->
+    <div>
+      <section class="panel">
+        <h3 style="margin:0 0 10px;font-size:15px">1 · 提供聊天记录</h3>
+
+        <div class="drop" id="anaDrop">
+          <div class="big">📄</div>
+          <div class="t1">点击选择文件，或把文件拖到这里</div>
+          <div class="t2" id="anaSpec"></div>
+        </div>
+        <input type="file" id="anaFile" style="display:none" />
+
+        <div id="anaPicked"></div>
+
+        <div style="margin-top:14px">
+          <label class="fld"><span>或直接粘贴文字（截图请先另存为图片文件）</span></label>
+          <textarea class="chatbox" id="anaText" placeholder="把对方的聊天内容粘贴到这里……"></textarea>
+          <div class="hint" style="margin:6px 0 0">上传文件与粘贴文字可同时使用，内容会合并后一并分析。</div>
+        </div>
+
+        <div class="btn-row" style="margin-top:12px">
+          <button class="primary" id="anaRun">开始辨析</button>
+          <button class="ghost sm" id="anaDemo">填入示例</button>
+          <button class="ghost sm" id="anaReset">清空</button>
+        </div>
+        <div id="anaMsg"></div>
+      </section>
+
+      <section class="panel">
+        <h3 style="margin:0 0 8px;font-size:15px">AI 研判引擎</h3>
+        <div class="hint" style="margin:0 0 10px">
+          关闭时仅用本地规则引擎分析（离线可用、结论可复现）；启用后由 AI 补充规则未覆盖的语义线索，
+          规则强信号不会被 AI 推翻。<b>连接参数与互动模式共用同一份配置</b>，在此修改会同步到那边；
+          两处的启用开关互相独立。
+        </div>
+        <div class="switch-row">
+          <label class="switch">
+            <input type="checkbox" id="anaAiEnabled" />
+            <span class="track"><span class="knob"></span></span>
+            <span class="switch-label">启用 AI 研判</span>
+          </label>
+        </div>
+        <div id="anaAiFields" class="aifields">
+          <label class="fld"><span>接口地址 Base URL</span>
+            <input type="text" id="anaAiBase" placeholder="https://api.openai.com/v1" /></label>
+          <label class="fld"><span>API Key</span>
+            <input type="password" id="anaAiKey" placeholder="sk-..." /></label>
+          <div class="row2">
+            <label class="fld"><span>模型</span>
+              <input type="text" id="anaAiModel" placeholder="gpt-4o-mini" /></label>
+            <label class="fld"><span>温度 0-2</span>
+              <input type="text" id="anaAiTemp" placeholder="0.9" /></label>
+          </div>
+          <div class="btn-row">
+            <button class="ghost sm" id="anaAiTest">测试连接</button>
+            <button class="ghost sm" id="anaAiVision">测试视觉</button>
+            <button class="ghost sm" id="anaAiClear">清空</button>
+          </div>
+          <div class="hint" id="anaAiModelHint"></div>
+          <div class="hint" id="anaAiStatus">配置保存在本机浏览器，仅发往你填写的接口地址。</div>
+          <div class="hint" style="margin-top:6px">
+            截图识别需要模型支持视觉输入（多模态）。点「测试视觉」可用一张极小的测试图验证当前模型能否读图——
+            若这里就不通，说明是模型不支持图片，换一个支持视觉的模型即可，与图片本身无关。
+          </div>
+        </div>
+        <div class="engine-tag" id="anaEngine">当前：本地规则引擎</div>
+      </section>
+    </div>
+
+    <!-- 右：结果 -->
+    <div>
+      <div id="anaState"></div>
+      <div id="anaResult"></div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+/*__BUNDLE__*/
+
+const $ = (id) => document.getElementById(id);
+
+/* ══════════════ 顶层路由 ══════════════ */
+const SCREENS = ['s-home', 's-library', 's-drill', 's-analyze'];
+function goto(name) {
+  SCREENS.forEach((s) => $(s).classList.toggle('on', s === name));
+  window.scrollTo(0, 0);
+  if (name === 's-library') renderLibrary();
+}
+
+/* ══════════════ 案例库 ══════════════
+ * 状态三件套：搜索词 / 当前分类 / 当前页码。
+ * 关键约定（对应需求）：搜索永远作用于全库，因此这里调用的是
+ * searchCases(keyword)，而不是 filterCases(catId, keyword)。
+ * 分类只决定「浏览范围」，不参与搜索——搜索框下的提示会明说这一点。
+ */
+const libState = { keyword: '', catId: null, page: 1, pageSize: 6 };
+const PAGE_BTNS = 5; // 分页条最多显示的页码按钮数
+
+function libSource() {
+  // 有搜索词 → 全库搜索（不受 catId 影响）；无搜索词 → 按分类浏览
+  return libState.keyword.trim()
+    ? searchCases(libState.keyword)
+    : casesByCategory(libState.catId);
+}
+
+function renderHeroStats() {
+  const stats = categoryStats();
+  const total = stats.reduce((a, b) => a + b.count, 0);
+  const high = stats.reduce((a, b) => a + b.high, 0);
+  $('heroStats').innerHTML = `
+    <div class="stat"><b>${CASE_CATEGORIES.length}</b><span>诈骗类型</span></div>
+    <div class="stat"><b>${total}</b><span>案例总数</span></div>
+    <div class="stat"><b>${high}</b><span>高危案例</span></div>
+    <div class="stat"><b>${SCENARIO_LIST.length}</b><span>互动剧本</span></div>`;
+}
+
+function renderCats() {
+  const stats = categoryStats();
+  const all = `<button class="cat ${libState.catId === null ? 'on' : ''}" data-cat="">
+      <div class="top"><span class="ico">📚</span><span class="nm">全部分类</span></div>
+      <div class="n">${stats.reduce((a, b) => a + b.count, 0)} 条案例</div>
+      <div class="blurb">按发布时间浏览全部收录案例</div>
+    </button>`;
+  $('libCats').innerHTML = all + CASE_CATEGORIES.map((c) => {
+    const s = stats.find((x) => x.id === c.id);
+    return `<button class="cat ${libState.catId === c.id ? 'on' : ''}" data-cat="${c.id}">
+      <div class="top"><span class="ico">${c.icon}</span><span class="nm">${c.name}</span></div>
+      <div class="n">${s.count} 条${s.high ? ` · <span class="high">${s.high} 高危</span>` : ''}</div>
+      <div class="blurb">${c.blurb}</div>
+    </button>`;
+  }).join('');
+  $('libCats').querySelectorAll('.cat').forEach((el) => {
+    el.onclick = () => {
+      libState.catId = el.dataset.cat || null;
+      libState.page = 1;
+      renderLibrary();
+    };
+  });
+}
+
+function caseCard(c) {
+  const cat = getCategory(c.catId);
+  const sevCls = 'sev ' + c.severity;
+  return `<article class="case" data-id="${c.id}">
+    <button class="case-head">
+      <div class="meta">
+        <span class="chip cattag">${cat.icon} ${cat.name}</span>
+        <span class="chip ${sevCls}">${c.severity}</span>
+        <span class="chip">${formatDate(c.date)}</span>
+      </div>
+      <h4>${c.title}</h4>
+      <p class="sum">${c.summary}</p>
+      <span class="chev">展开完整内容 ▾</span>
+    </button>
+    <div class="case-body">
+      <div class="blk"><h5>🔍 手法拆解</h5><ol>${c.method.map((m) => `<li>${m}</li>`).join('')}</ol></div>
+      <div class="blk say"><h5>🗣 典型话术</h5>${c.say.map((s) => `<div class="quote">${s}</div>`).join('')}</div>
+      <div class="blk crack"><h5>⚠ 破绽在哪</h5><ul>${c.cracks.map((x) => `<li>${x}</li>`).join('')}</ul></div>
+      <div class="blk act"><h5>🛡 遇到了怎么办</h5><ul>${c.action.map((x) => `<li>${x}</li>`).join('')}</ul></div>
+      <div class="tags">${(c.tags || []).map((t) => `<span class="tag-s">#${t}</span>`).join('')}</div>
+    </div>
+  </article>`;
+}
+
+function renderPager(page, totalPages) {
+  if (totalPages <= 1) { $('libPager').innerHTML = ''; return; }
+  const nums = [];
+  const half = Math.floor(PAGE_BTNS / 2);
+  let start = Math.max(1, page - half);
+  const end = Math.min(totalPages, start + PAGE_BTNS - 1);
+  start = Math.max(1, end - PAGE_BTNS + 1);
+  for (let i = start; i <= end; i++) nums.push(i);
+  $('libPager').innerHTML = `
+    <button ${page === 1 ? 'disabled' : ''} data-go="${page - 1}">上一页</button>
+    ${nums.map((n) => `<button class="pg ${n === page ? 'on' : ''}" data-go="${n}">${n}</button>`).join('')}
+    <button ${page === totalPages ? 'disabled' : ''} data-go="${page + 1}">下一页</button>`;
+  $('libPager').querySelectorAll('button[data-go]').forEach((el) => {
+    el.onclick = () => { libState.page = Number(el.dataset.go); renderLibrary(); };
+  });
+}
+
+function renderLibrary() {
+  renderCats();
+  const kw = libState.keyword.trim();
+  const list = sortByDateDesc(libSource());
+  const { items, page, totalPages, total } = paginate(list, libState.page, libState.pageSize);
+  libState.page = page;
+
+  const cat = libState.catId ? getCategory(libState.catId) : null;
+  $('libCrumb').innerHTML =
+    `<span>位置：</span><b>全部案例</b>${cat ? ` › <b>${cat.name}</b>` : ''}`;
+  $('libCount').innerHTML = kw
+    ? `在全库 ${casesByCategory(null).length} 条案例中匹配到 <b style="color:var(--ink)">${total}</b> 条`
+    : `共 <b style="color:var(--ink)">${total}</b> 条案例`;
+
+  $('libCases').innerHTML = items.length
+    ? items.map(caseCard).join('')
+    : `<div class="empty"><div class="big">🔍</div>
+        <div>没有匹配「${kw}」的案例</div>
+        <div style="font-size:12.5px;margin-top:6px">换个关键词试试，比如「验证码」「安全账户」「兼职」</div></div>`;
+
+  $('libCases').querySelectorAll('.case-head').forEach((el) => {
+    el.onclick = () => el.parentElement.classList.toggle('open');
+  });
+  renderPager(page, totalPages);
+}
+
+function setKeyword(v) {
+  libState.keyword = v;
+  libState.page = 1;              // 换关键词回到第一页，符合直觉
+  $('libSearchClear').classList.toggle('on', !!v);
+  renderLibrary();
+}
+
+$('libSearch').addEventListener('input', (e) => setKeyword(e.target.value));
+$('libSearchClear').onclick = () => { $('libSearch').value = ''; setKeyword(''); $('libSearch').focus(); };
+$('goLibrary').onclick = () => goto('s-library');
+$('goDrill').onclick = () => goto('s-drill');
+$('goAnalyze').onclick = () => goto('s-analyze');
+$('libBack').onclick = () => goto('s-home');
+$('drillBack').onclick = () => goto('s-home');
+
+/* ============ 设置（AI 引擎） ============ */
+const AI_STORE_KEY = 'scamsim.ai.v1';
+/**
+ * AI 配置的数据结构：
+ *   连接参数（baseUrl / apiKey / model / temperature）—— 互动模式与诈骗辨析**共用一份**，
+ *     存在同一个 localStorage 键下，在任一屏修改都会同步到另一屏。
+ *   启用开关（enabled）—— 分开存放（enabled=互动模式话术，analyzeEnabled=辨析研判），
+ *     因为两者的开关语义不同：一个决定「AI 替我说话」，另一个决定「AI 参与研判」。
+ *     共用连接参数但不共用开关，避免用户在辨析屏开开关时意外改变互动模式的行为。
+ */
+let aiCfg = { enabled: false, analyzeEnabled: false, baseUrl: '', apiKey: '', model: '', temperature: 0.9 };
+
+function loadAI() {
+  try {
+    const raw = localStorage.getItem(AI_STORE_KEY);
+    if (raw) aiCfg = Object.assign(aiCfg, JSON.parse(raw));
+  } catch (e) { /* 本地存储不可用时保持默认 */ }
+}
+function saveAI() {
+  try { localStorage.setItem(AI_STORE_KEY, JSON.stringify(aiCfg)); } catch (e) { /* 忽略 */ }
+}
+
+/**
+ * 把当前配置渲染到指定的面板实例。
+ * @param {{ids:object, enabledKey:string}} panel
+ */
+function renderAIFields(panel) {
+  const id = panel.ids;
+  $(id.enabled).checked = !!aiCfg[panel.enabledKey];
+  $(id.base).value = aiCfg.baseUrl || '';
+  $(id.key).value = aiCfg.apiKey || '';
+  $(id.model).value = aiCfg.model || '';
+  $(id.temp).value = aiCfg.temperature ?? 0.9;
+  $(id.fields).classList.toggle('off', !aiCfg[panel.enabledKey]);
+  setAIStatus(id.status, '配置保存在本机浏览器，仅发往你填写的接口地址。', '');
+  updateModelHint(id.modelHint);
+}
+
+/**
+ * 模型能力提示：当前模型到底支不支持图片输入。
+ *
+ * 这一条是踩过坑之后加的：截图辨析完全依赖视觉能力，
+ * 而「模型不支持视觉」与「这张图难辨」在界面上都表现为一句「无法判断」，
+ * 用户根本分不出是自己图选错了还是模型选错了。
+ * 所以在填模型名的时候就把这件事说清楚，能省掉一整轮猜测。
+ */
+function updateModelHint(hintId) {
+  const el = $(hintId);
+  if (!el) return;
+  const info = describeVisionSupport(aiCfg.model, aiCfg.baseUrl);
+  if (info.state === 'no') {
+    el.className = 'hint warn';
+    el.innerHTML = '⚠️ ' + escapeHtml(info.reason)
+      + (info.suggestModel
+        ? ' <button class="ghost sm" data-fixmodel="' + escapeHtml(info.suggestModel) + '">换成 '
+          + escapeHtml(info.suggestModel) + '</button>'
+        : ' 建议改用：' + info.examples.map(escapeHtml).join('、'));
+  } else if (info.state === 'yes') {
+    el.className = 'hint ok';
+    el.textContent = '✓ ' + info.reason;
+  } else {
+    el.className = 'hint';
+    el.textContent = info.reason;
+  }
+  const btn = el.querySelector('[data-fixmodel]');
+  if (btn) btn.onclick = () => switchModel(btn.dataset.fixmodel);
+}
+
+/**
+ * 一键换模型：改配置 → 同步两屏输入框 → 若刚才正是读图失败，自动重跑一次。
+ * @param {string} model 新的模型名
+ */
+function switchModel(model) {
+  aiCfg.model = String(model || '').trim();
+  saveAI();
+  renderAIFields(AI_PANELS[0]);
+  renderAIFields(AI_PANELS[1]);
+  // 刚才那次分析正是因为「模型不支持视觉」而失败的 → 直接重跑，用户不用再点一次
+  if (typeof anaState !== 'undefined' && anaState.lastRun && anaState.lastRun.imageReadFailed) {
+    anaRun();
+  }
+}
+
+/**
+ * 当前生效的连接配置：只取连接参数，与用在哪一屏无关。
+ * 未启用或校验不过时返回 null（调用方据此回落到离线路径）。
+ */
+function activeAICfg() {
+  const cfg = { baseUrl: (aiCfg.baseUrl || '').trim(), apiKey: (aiCfg.apiKey || '').trim(),
+                model: (aiCfg.model || '').trim(), temperature: Number(aiCfg.temperature) || 0.9 };
+  return validateSettings(cfg).ok ? cfg : null;
+}
+
+/** 互动模式是否启用 AI 话术 */
+function drillAIOn() { return !!aiCfg.enabled && !!activeAICfg(); }
+/** 诈骗辨析是否启用 AI 研判 */
+function analyzeAIOn() { return !!aiCfg.analyzeEnabled && !!activeAICfg(); }
+
+function setAIStatus(statusId, text, cls) {
+  const el = $(statusId);
+  el.textContent = text;
+  el.className = 'hint' + (cls ? ' ' + cls : '');
+}
+
+/**
+ * 从面板读回连接参数（不含启用开关——开关由各自面板单独处理）。
+ * 任何一个面板改了连接参数，另一屏的输入框也要跟着更新，所以这里统一写回全局 aiCfg。
+ */
+function readAIForm(panel) {
+  const id = panel.ids;
+  aiCfg.baseUrl = $(id.base).value.trim();
+  aiCfg.apiKey = $(id.key).value.trim();
+  aiCfg.model = $(id.model).value.trim();
+  const t = Number($(id.temp).value);
+  aiCfg.temperature = Number.isFinite(t) ? Math.min(2, Math.max(0, t)) : 0.9;
+  saveAI();
+}
+
+/**
+ * 挂载一个 AI 配置面板。
+ * 多个面板共享同一份连接参数，但各有独立的启用开关。
+ * @param {{ids:object, enabledKey:string, onChange?:Function}} panel
+ */
+function mountAIPanel(panel) {
+  const id = panel.ids;
+  $(id.enabled).addEventListener('change', () => {
+    aiCfg[panel.enabledKey] = $(id.enabled).checked;
+    saveAI();
+    // 连接参数共用 → 两屏输入框都刷新
+    renderAIFields(AI_PANELS[0]);
+    renderAIFields(AI_PANELS[1]);
+    if (panel.onChange) panel.onChange();
+  });
+  [id.base, id.key, id.model, id.temp].forEach(fid =>
+    $(fid).addEventListener('change', () => {
+      readAIForm(panel);
+      // 连接参数共用 → 另一屏的输入框也要同步显示
+      renderAIFields(AI_PANELS[0]);
+      renderAIFields(AI_PANELS[1]);
+      if (panel.onChange) panel.onChange();
+    }));
+  $(id.clear).onclick = () => {
+    aiCfg = { enabled: false, analyzeEnabled: false, baseUrl: '', apiKey: '', model: '', temperature: 0.9 };
+    saveAI();
+    renderAIFields(AI_PANELS[0]);
+    renderAIFields(AI_PANELS[1]);
+    setAIStatus(id.status, '已清空配置。', '');
+    if (panel.onChange) panel.onChange();
+  };
+  $(id.test).onclick = async () => {
+    readAIForm(panel);
+    const cfg = activeAICfg();
+    if (!cfg) {
+      const v = validateSettings({ baseUrl: aiCfg.baseUrl, apiKey: aiCfg.apiKey, model: aiCfg.model });
+      setAIStatus(id.status, '无法测试：' + v.errors.join('；'), 'err');
+      return;
+    }
+    setAIStatus(id.status, '测试中…', '');
+    try {
+      const r = await callChat(cfg, [
+        { role: 'system', content: '你只需要回复两个字：可用' },
+        { role: 'user', content: '连接测试' },
+      ], { timeoutMs: 15000 });
+      setAIStatus(id.status, '连接成功：' + r, 'ok');
+    } catch (err) {
+      setAIStatus(id.status, '连接失败：' + (err && err.message ? err.message : String(err)), 'err');
+    }
+  };
+}
+
+/** 互动模式侧栏的面板实例 */
+const AI_PANELS = [
+  {
+    enabledKey: 'enabled',
+    ids: { enabled: 'aiEnabled', base: 'aiBase', key: 'aiKey', model: 'aiModel',
+           temp: 'aiTemp', fields: 'aiFields', status: 'aiStatus', test: 'aiTest', clear: 'aiClear',
+           modelHint: 'aiModelHint' },
+  },
+  {
+    enabledKey: 'analyzeEnabled',
+    ids: { enabled: 'anaAiEnabled', base: 'anaAiBase', key: 'anaAiKey', model: 'anaAiModel',
+           temp: 'anaAiTemp', fields: 'anaAiFields', status: 'anaAiStatus', test: 'anaAiTest', clear: 'anaAiClear',
+           modelHint: 'anaAiModelHint' },
+    onChange: () => anaRenderEngine(),
+  },
+];
+
+loadAI();
+AI_PANELS.forEach(mountAIPanel);
+renderAIFields(AI_PANELS[0]);
+renderAIFields(AI_PANELS[1]);
+
+let session = null;
+let selected = SCENARIOS.job.id;
+let typingTimer = null;
+let sending = false;
+
+function show(id) { ['v-home','v-list','v-chat'].forEach(v => $(v).classList.toggle('on', v === id)); }
+function now() { const d = new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function scrollDown() { const s = $('msgScroll'); s.scrollTop = s.scrollHeight; }
+
+function renderCards() {
+  $('cards').innerHTML = SCENARIO_LIST.map(s => `
+    <div class="card ${s.id === selected ? 'sel' : ''}" data-id="${s.id}">
+      <span class="lv">${s.level}</span>
+      <div class="top">
+        <div class="ava" style="background:${s.avatarBg}">${s.avatar}</div>
+        <h3>${s.nickname}</h3>
+      </div>
+      <p>${s.title}<br>${s.intro}</p>
+    </div>`).join('');
+  $('cards').querySelectorAll('.card').forEach(el => {
+    el.onclick = () => { selected = el.dataset.id; renderCards(); };
+  });
+}
+
+function start() {
+  session = new ScamSession(selected);
+  $('msgs').innerHTML = '';
+  $('reportBox').style.display = 'none';
+  $('alertBox').innerHTML = '';
+  $('reportBtn').style.display = 'none';
+  $('monitor').style.display = '';
+  $('picker').style.display = 'none';
+  $('userInput').disabled = false; $('sendBtn').disabled = false; $('blockBtn').disabled = false;
+  $('peerName').textContent = session.sc.contact.nickname;
+  $('mPeer').textContent = session.sc.contact.nickname;
+  $('mStage').textContent = session.stage.name;
+  updateScore(0);
+
+  // 生成微信好友列表：诈骗方置顶 + 若干无关好友做真实感
+  const filler = [
+    { n: '妈妈', a: '妈', c: '#e07a9a', t: '记得按时吃饭', u: 0 },
+    { n: '张三（同事）', a: '张', c: '#4a90d9', t: '明天的会改到十点了', u: 1 },
+    { n: '外卖提醒', a: '外', c: '#8b8b8b', t: '您的订单已送达', u: 0 },
+  ];
+  const peer = session.sc.contact;
+  const rows = [peer, ...filler];
+  $('chatList').innerHTML = rows.map((r, i) => `
+    <div class="row" data-i="${i}">
+      <div class="ava" style="background:${r.avatarBg || r.c}">${r.avatar || r.a}</div>
+      <div class="meta">
+        <div class="n"><span>${r.nickname || r.n}</span>${r.unread ? `<span class="badge">${r.unread}</span>` : ''}</div>
+        <div class="t">${r.lastMsg || r.t}</div>
+      </div>
+    </div>`).join('');
+  $('chatList').querySelectorAll('.row').forEach(el => {
+    el.onclick = () => { if (+el.dataset.i === 0) openChat(); };
+  });
+  $('clock').textContent = now();
+  show('v-list');
+}
+
+function openChat() {
+  show('v-chat');
+  session.transcript.forEach(m => renderMsg(m, false));
+  scrollDown();
+  $('userInput').focus();
+}
+
+function renderMsg(m, animate) {
+  const box = document.createElement('div');
+  if (m.role === 'system') {
+    box.className = 'sys' + (m.kind === 'link' ? ' link' : '');
+    box.textContent = m.text;
+  } else if (m.role === 'me') {
+    box.className = 'msg me';
+    box.innerHTML = `<div class="bubble"></div>`;
+    box.querySelector('.bubble').textContent = m.text;
+  } else {
+    box.className = 'msg';
+    const c = session.sc.contact;
+    box.innerHTML = `<div class="ava" style="background:${c.avatarBg}">${c.avatar}</div><div class="bubble"></div>`;
+    box.querySelector('.bubble').textContent = m.text;
+  }
+  $('msgs').appendChild(box);
+  scrollDown();
+  return box;
+}
+
+function renderStage(name) {
+  const d = document.createElement('div');
+  d.className = 'stage';
+  d.textContent = name;
+  $('msgs').appendChild(d);
+  scrollDown();
+}
+
+function showTyping() {
+  const c = session.sc.contact;
+  const d = document.createElement('div');
+  d.className = 'typing';
+  d.innerHTML = `<div class="ava" style="background:${c.avatarBg}">${c.avatar}</div><div class="bubble">对方正在输入…</div>`;
+  $('msgs').appendChild(d);
+  scrollDown();
+  return d;
+}
+
+function updateScore(score) {
+  $('mScore').textContent = score;
+  const bar = $('mBar');
+  bar.style.width = Math.min(score, 100) + '%';
+  bar.style.background = score >= 70 ? 'var(--red)' : score >= 40 ? 'var(--amber)' : 'var(--green)';
+  $('mStage').textContent = session.stage.name;
+}
+
+function send() {
+  const v = $('userInput').value.trim();
+  if (!v || !session || session.finished || sending) return;
+  sending = true;
+  $('sendBtn').disabled = true;
+  $('userInput').value = '';
+  renderMsg({ role: 'me', text: sanitize(v) }, true);
+
+  const typing = showTyping();
+  // 互动模式的 AI 开关独立于辨析屏；关闭时 cfg 为 null，自动回落到内置话术
+  const cfg = drillAIOn() ? activeAICfg() : null;
+  $('mEngine').textContent = cfg ? 'AI 生成（规则控场）' : '内置知识库话术';
+
+  session
+    .handleAsync(v, cfg)
+    .then((r) => {
+      typing.remove();
+      r.messages.forEach((m, i) => {
+        if (m.stage && i === r.messages.length - 1) renderStage('— ' + m.stage + ' —');
+        renderMsg(m, true);
+      });
+      $('alertBox').innerHTML = [
+        r.note ? '<div class="alert warn">' + r.note + '</div>' : '',
+        r.alert ? '<div class="alert ' + r.alert.level + '">' + r.alert.text + '</div>' : '',
+      ].join('');
+      updateScore(r.score);
+      if (r.type === 'terminate') {
+        $('userInput').disabled = true; $('sendBtn').disabled = true;
+        $('reportBtn').style.display = '';
+        renderStage('对话结束');
+      }
+    })
+    .catch((err) => {
+      typing.remove();
+      $('alertBox').innerHTML = '<div class="alert danger">处理失败：' + (err && err.message ? err.message : String(err)) + '</div>';
+      updateScore(session.report().score);
+    })
+    .finally(() => {
+      sending = false;
+      if (!$('userInput').disabled) $('sendBtn').disabled = false;
+    });
+}
+
+function finish() {
+  const rep = session.report();
+  $('reportBtn').style.display = 'none';
+  $('reportBox').style.display = '';
+  const reached = new Set(rep.transcript.filter(m => m.stage && /^[一二三四]、/.test(m.stage)).map(m => m.stage));
+  const stageRows = rep.scenario.stages.map((st) => `
+    <tr><td>${reached.has(st.name) ? '✅ 已到达' : '⬜ 未到达'} ${st.name}</td>
+    <td>${st.goal}</td><td><b>建议：</b>${st.advice}</td></tr>`).join('');
+  const flags = rep.scenario.stages.filter(s => reached.has(s.name)).flatMap(s => s.redFlags).map(f => '<li>' + f + '</li>').join('');
+  const riskTags = rep.risks.length
+    ? rep.risks.map(r => '<span class="tag">' + RISK_LABELS[r] + '</span>').join('')
+    : '<span class="tag" style="background:#e6f4ea;color:var(--green)">未出现危险行为</span>';
+
+  $('reportBox').innerHTML = `
+    <div class="report">
+    <h2>演练复盘报告</h2>
+    <p class="hint" style="margin:0">好友「${rep.contact.nickname}」· ${rep.scenario.title} · ${rep.turns} 轮对话 · 顺从 ${rep.complied} 次</p>
+    <div class="kv" style="margin-top:10px"><span>风险指数</span>
+      <span style="color:${rep.color};font-weight:700">${rep.score} / 100 · ${rep.level}</span></div>
+    <div class="meter"><i style="width:${rep.score}%;background:${rep.color}"></i></div>
+    <p style="margin:10px 0 4px"><b>结论：</b>${rep.advice}</p>
+    <p style="margin:4px 0"><b>本案手法：</b>${rep.scenario.background}</p>
+
+    <h4 style="margin:16px 0 4px">你暴露的风险行为</h4>
+    <div>${riskTags}</div>
+    ${rep.riskLog.length ? '<table><tr><th>轮次</th><th>行为</th></tr>' +
+      rep.riskLog.map(r => '<tr><td>第 ' + r.turn + ' 轮</td><td>' + r.label + '</td></tr>').join('') + '</table>' : ''}
+
+    <h4 style="margin:16px 0 4px">阶段推进复盘</h4>
+    <table><tr><th style="width:30%">阶段</th><th style="width:30%">对方想要什么</th><th>防范要点</th></tr>${stageRows}</table>
+
+    <h4 style="margin:16px 0 4px">你走过的阶段里存在的破绽</h4>
+    <ul class="rf">${flags}</ul>
+
+    <details style="margin-top:14px"><summary>查看完整聊天记录</summary>
+      <div>${rep.transcript.map(m => {
+        const who = m.role === 'scammer' ? '对方' : m.role === 'me' || m.role === 'victim' ? '我' : '· 系统 ·';
+        return `<p style="margin:4px 0"><b>${who}</b>：${m.text.replace(/\n/g,'<br>')}</p>`;
+      }).join('')}</div>
+    </details>
+    <div style="margin-top:14px"><button class="primary" id="againBtn">换个剧本再来一次</button></div>
+    </div>`;
+  $('againBtn').onclick = () => {
+    $('picker').style.display = ''; $('monitor').style.display = 'none';
+    $('reportBox').style.display = 'none'; renderCards();
+  };
+}
+
+$('startBtn').onclick = start;
+$('sendBtn').onclick = send;
+$('reportBtn').onclick = finish;
+$('backBtn').onclick = () => show('v-list');
+$('blockBtn').onclick = () => { $('userInput').value = '我要拉黑你并报警'; send(); };
+$('userInput').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+$('app-wechat').onclick = () => {
+  if (!session) { $('homeHint').textContent = '请先在右侧选择剧本并点「生成微信好友」。'; return; }
+  show('v-list');
+};
+/* ══════════════════════════════════════════════════════════════
+ * 诈骗辨析
+ * ----------------------------------------------------------------
+ * 输入状态 picked：当前已读取的文件 { name, kind, text?, dataUrl? }。
+ * 图片走 FileReader 读成 dataURL 交给支持视觉的模型；文本走 FileReader 取内容。
+ * 任何读取失败都转成 errState（可重试），不静默吞掉。
+ */
+const anaState = { picked: null, running: false, lastRun: null };
+
+/** 示例聊天：一段典型冒充客服+验证码话术，用于零成本体验与冒烟测试 */
+const ANA_DEMO = [
+  '【陌生消息】亲亲，您的花呗账单已逾期，系统将自动冻结您的账户。',
+  '我是蚂蚁客服 编号 A8821，请在本小时内处理，否则将上报征信。',
+  '请点击 http://service-help.cc 链接登录验证，或把短信验证码发给我，我帮您解冻。',
+  '处理完立刻转 500 元到安全账户，这是解冻的保证金，晚点就来不及了！',
+].join('\n');
+
+function anaSpecText() {
+  return `支持格式：文本 ${UPLOAD_SPEC.textExts.join(' / ')}（≤ ${humanSize(UPLOAD_SPEC.maxText)}）<br>`
+       + `图片 ${UPLOAD_SPEC.imageExts.join(' / ')}（≤ ${humanSize(UPLOAD_SPEC.maxImage)}）`;
+}
+
+/** 统一渲染错误：标题 + 可理解说明 + 重试按钮 */
+function anaError(title, detail, retryLabel) {
+  $('anaResult').innerHTML = `
+    <div class="err">
+      <div class="ic">⚠️</div>
+      <div class="bd">
+        <b>${title}</b>
+        <p>${detail}</p>
+        <div class="btn-row">
+          <button class="ghost sm" id="anaRetry">${retryLabel || '重试'}</button>
+          <button class="ghost sm" id="anaErrReset">清空重填</button>
+        </div>
+      </div>
+    </div>`;
+  $('anaRetry').onclick = () => anaRun();
+  $('anaErrReset').onclick = () => anaReset();
+  $('anaState').innerHTML = '';
+}
+
+function anaLoading() {
+  $('anaResult').innerHTML = '';
+  $('anaState').innerHTML =
+    `<div class="panel"><div class="loading"><span class="spinner"></span>
+      <span id="anaLoadTxt">正在读取并分析…</span></div></div>`;
+  $('anaRun').disabled = true;
+}
+function anaIdleDone() { $('anaRun').disabled = false; }
+
+/** 渲染已选文件条 */
+function anaRenderPicked() {
+  const p = anaState.picked;
+  if (!p) { $('anaPicked').innerHTML = ''; return; }
+  const kind = p.kind === 'image' ? '图片' : '文本';
+  const extra = p.kind === 'image'
+    ? ` · ${humanSize(p.size)}`
+    : ` · ${humanSize(p.size)} · ${p.text.length} 字`;
+  $('anaPicked').innerHTML = `
+    <div class="picked"><span>📎</span>
+      <span><b>${p.name}</b>（${kind}${extra}）</span>
+      <button class="x" id="anaUnpick">移除</button>
+    </div>`;
+  $('anaUnpick').onclick = () => { anaState.picked = null; $('anaFile').value = ''; anaRenderPicked(); };
+  if (p.kind === 'image') anaWarnNoVision();
+}
+
+/**
+ * 选了图片就提前看一眼模型支不支持视觉——
+ * 与其等分析跑完只得到一句「无法判断」，不如在上传这一步就说清楚。
+ * @returns {boolean} 是否给出了警告
+ */
+function anaWarnNoVision() {
+  const info = describeVisionSupport(aiCfg.model, aiCfg.baseUrl);
+  if (info.state !== 'no') return false;
+  $('anaMsg').innerHTML = '<div class="alert warn">⚠️ ' + escapeHtml(info.reason)
+    + (info.suggestModel
+      ? ' <button class="ghost sm" id="anaFixModel">换成 ' + escapeHtml(info.suggestModel) + '</button>'
+      : ' 建议改用：' + info.examples.map(escapeHtml).join('、'))
+    + '</div>';
+  const b = $('anaFixModel');
+  if (b) b.onclick = () => switchModel(info.suggestModel);
+  return true;
+}
+
+/** FileReader 读取文件。失败走 onErr，保证「上传失败」有提示而非静默 */
+function anaReadFile(file, onOk, onErr) {
+  const v = validateUpload(file);
+  if (!v.ok) { onErr(v.error, '换文件'); return; }
+  const fr = new FileReader();
+  fr.onerror = () => onErr('读取文件失败，可能是文件被占用或权限不足。请关闭占用它的程序后重试。', '重新读取');
+  fr.onload = () => {
+    if (v.kind === 'text') {
+      const text = String(fr.result || '');
+      const tv = validateText(text);
+      if (!tv.ok) { onErr(tv.error, '换文件'); return; }
+      onOk({ name: file.name, kind: 'text', text, size: v.size });
+    } else {
+      const dataUrl = String(fr.result || '');
+      if (!dataUrl || dataUrl.length < 32) { onErr('图片读取结果为空或已损坏，请换一张截图重试。', '换图片'); return; }
+      onOk({ name: file.name, kind: 'image', dataUrl, size: v.size });
+    }
+  };
+  if (v.kind === 'text') fr.readAsText(file, 'utf-8');
+  else fr.readAsDataURL(file);
+}
+
+$('anaDrop').onclick = () => $('anaFile').click();
+$('anaFile').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  anaReadFile(
+    f,
+    (p) => { anaState.picked = p; anaRenderPicked(); $('anaResult').innerHTML = ''; $('anaState').innerHTML = ''; },
+    (msg, retry) => anaError('上传失败', msg, retry)
+  );
+});
+['dragenter', 'dragover'].forEach(ev =>
+  $('anaDrop').addEventListener(ev, (e) => { e.preventDefault(); $('anaDrop').classList.add('drag'); }));
+['dragleave', 'drop'].forEach(ev =>
+  $('anaDrop').addEventListener(ev, (e) => { e.preventDefault(); $('anaDrop').classList.remove('drag'); }));
+$('anaDrop').addEventListener('drop', (e) => {
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!f) { anaError('上传失败', '没有从拖拽内容中读到文件。请重新拖入，或点击选择文件。', '重试'); return; }
+  anaReadFile(
+    f,
+    (p) => { anaState.picked = p; anaRenderPicked(); },
+    (msg, retry) => anaError('上传失败', msg, retry)
+  );
+});
+
+$('anaDemo').onclick = () => {
+  $('anaText').value = ANA_DEMO;
+  $('anaResult').innerHTML = ''; $('anaState').innerHTML = '';
+  $('anaMsg').innerHTML = '<div class="alert warn">已填入一段示例冒充客服话术，点「开始辨析」查看输出。</div>';
+};
+$('anaReset').onclick = () => anaReset();
+function anaReset() {
+  anaState.picked = null; anaState.lastRun = null;
+  $('anaFile').value = '';
+  $('anaText').value = '';
+  anaRenderPicked();
+  $('anaMsg').innerHTML = '';
+  $('anaResult').innerHTML = '';
+  $('anaState').innerHTML = '';
+  $('anaRun').disabled = false;
+}
+
+/** 刷新辨析屏顶部的引擎状态说明（开关或连接参数变化时调用） */
+function anaRenderEngine() {
+  const cfg = analyzeAIOn() ? activeAICfg() : null;
+  $('anaEngine').textContent = cfg
+    ? `当前：AI 研判 + 规则引擎（模型 ${cfg.model}）`
+    : aiCfg.analyzeEnabled
+      ? '当前：已开启 AI 研判，但连接配置不完整——本次按本地规则引擎分析（请检查接口地址 / API Key / 模型）'
+      : '当前：本地规则引擎（未启用 AI，结果仅基于规则特征命中）';
+  // 打开辨析屏就把「模型不支持图片」摆到台面上，别等上传完截图才说
+  if (cfg && !$('anaMsg').textContent.trim()) anaWarnNoVision();
+}
+
+/** 结果渲染：结论 → 依据 → 特征 → 建议 → 原始输入 */
+function anaRenderResult(r) {
+  const v = r.verdictInfo;
+  const sigs = r.signals;
+  const advice = r.advice;
+
+  const sigHtml = sigs.length
+    ? sigs.map((s) => `
+      <div class="sigrow">
+        <div class="ic">${s.icon}</div>
+        <div class="bd">
+          <div class="nm">${s.label}${s.fromAI ? '<span class="chip">AI 补充</span>' : ''}</div>
+          <div class="ds">${s.detail}</div>
+          ${s.evidence ? `<div class="ev">原文线索：${escapeHtml(s.evidence)}</div>` : ''}
+        </div>
+        ${s.catId ? `<button class="go" data-cat="${s.catId}">看同类案例</button>` : ''}
+      </div>`).join('')
+    : '<div class="hintbox"><b>未命中任何诈骗特征</b>聊天记录中没有出现规则表覆盖的诈骗话术结构，也不含 AI 补充的语义线索。</div>';
+
+  const adviceHtml = advice.length
+    ? `<ul class="rf">${advice.map((a) => `<li>${escapeHtml(a)}</li>`).join('')}</ul>`
+    : '<div class="hint">暂无可给出的具体建议。若对方仍在索要敏感信息，请直接终止往来。</div>';
+
+  const notesHtml = r.notes.length
+    ? r.notes.map((n) => `<div class="alert warn">${escapeHtml(n)}</div>`).join('')
+    : '';
+
+  // 读图失败是「分析没做成」，不是「结论是未知」——必须用醒目的错误块置顶，
+  // 否则用户只会看到「无法判断」，以为对方真不是骗子。
+  const vinfo = describeVisionSupport(aiCfg.model, aiCfg.baseUrl);
+  const fixBtn = vinfo.suggestModel
+    ? `<button class="ghost sm" id="anaFixModel">改用 ${escapeHtml(vinfo.suggestModel)} 并重试</button>`
+    : '';
+  const fixTip = vinfo.suggestModel
+    ? ''
+    : `<div class="hint" style="margin-top:6px">可换用支持视觉的模型：${vinfo.examples.map(escapeHtml).join('、')}</div>`;
+  const imageFailHtml = r.imageReadFailed
+    ? `<div class="err" style="margin-bottom:14px">
+        <div class="ic">🖼️</div>
+        <div class="bd">
+          <b>模型没能读出这张截图，本次结论不可用</b>
+          <p>${escapeHtml(r.notes.find((n) => n.includes('截图')) || '模型没有读出图片中的文字。')}</p>
+          ${fixTip}
+          <div class="btn-row">
+            <button class="ghost sm" id="anaRetryAi">重新分析</button>
+            ${fixBtn}
+            <button class="ghost sm" id="anaToText">改用文字分析</button>
+          </div>
+        </div>
+      </div>`
+    : '';
+
+  $('anaResult').innerHTML = `
+    ${imageFailHtml}
+    <div class="verdict ${r.verdict}">
+      <div class="vt">
+        <h2 style="color:${v.color}">存在诈骗嫌疑：${v.label}</h2>
+        <span class="sub">${escapeHtml(r.source.name)} · ${r.source.kind === 'image'
+          ? '图片' + (r.source.chars ? `（另附 ${r.source.chars} 字文字）` : '')
+          : `文本 ${r.source.chars} 字`}</span>
+      </div>
+      <p class="desc">${v.desc}。<b>判断依据：</b>${escapeHtml(r.summary || '—')}</p>
+      <div class="kv" style="margin-top:12px"><span>风险等级</span>
+        <span style="color:${r.level.color};font-weight:700">${r.level.label}</span></div>
+      <div class="meter"><i style="width:${r.riskScore}%;background:${r.level.color}"></i></div>
+      <div class="kv" style="margin-top:8px"><span>风险指数</span><span>${r.riskScore} / 100</span></div>
+      <div class="kv"><span>研判方式</span><span>${
+        r.engine === 'hybrid' ? 'AI 研判 + 规则引擎' : '规则引擎（离线）'
+      }</span></div>
+      ${r.confidence ? `<div class="kv"><span>结论置信度</span><span>${r.confidence}%</span></div>` : ''}
+      <div class="btn-row" style="margin-top:12px">
+        <button class="ghost sm" id="anaAgain">重新分析</button>
+      </div>
+      ${notesHtml}
+    </div>
+
+    <section class="panel" style="margin-top:14px">
+      <h3 style="margin:0 0 10px;font-size:15px">可疑点逐条说明（${sigs.length}）</h3>
+      ${sigHtml}
+    </section>
+
+    <section class="panel">
+      <h3 style="margin:0 0 8px;font-size:15px">防骗建议</h3>
+      <div class="hintbox">${adviceHtml}</div>
+      <div class="hint" style="margin-top:10px">
+        涉事金额较大或已发生转账，请立即报警（110）并联系银行止付，同时拨打 96110 咨询反诈事项。
+      </div>
+    </section>
+
+    <details style="margin-top:14px"><summary>查看本次分析使用的规则与口径</summary>
+      <div class="hint" style="margin-top:6px">
+        结论口径：规则分 ≥ 25 判为「是」，规则零命中且 AI 未提出语义线索判为「否」，
+        其余为「无法判断」。规则分 ≥ ${AI_OVERRIDE_SCORE} 时 AI 不能把结论判为「否」。
+        共 ${SIGNAL_TYPES.length} 类特征参与检测，命中即列在上方。
+      </div>
+    </details>`;
+
+  $('anaAgain').onclick = () => anaRun();
+  // 读图失败时的出口：重试 / 换用支持视觉的模型 / 改用文字
+  const failRetry = $('anaRetryAi');
+  if (failRetry) failRetry.onclick = () => anaRun();
+  const fixModel = $('anaFixModel');
+  if (fixModel) fixModel.onclick = () => switchModel(vinfo.suggestModel);
+  const toText = $('anaToText');
+  if (toText) {
+    toText.onclick = () => {
+      $('anaText').focus();
+      $('anaMsg').innerHTML = '<div class="alert warn">请把聊天内容粘贴到上方文本框，然后点「开始辨析」。'
+        + '（图片读取失败时，文字分析不受影响）</div>';
+      window.scrollTo(0, 0);
+    };
+  }
+  $('anaResult').querySelectorAll('[data-cat]').forEach((b) => {
+    b.onclick = () => {
+      libState.catId = b.dataset.cat;
+      libState.keyword = '';
+      libState.page = 1;
+      $('libSearch').value = '';
+      $('libSearchClear').classList.remove('on');
+      goto('s-library');
+    };
+  });
+}
+
+/** 主流程：校验输入 → 加载态 → 调用 analyze → 渲染 / 错误 */
+async function anaRun() {
+  if (anaState.running) return;
+  const pasted = $('anaText').value;
+  const p = anaState.picked;
+
+  if (!p && !pasted.trim()) {
+    anaError('没有可分析的内容', '请上传聊天记录文件，或把内容粘贴到左侧文本框，然后点「开始辨析」。', '重新选择文件');
+    return;
+  }
+
+  anaState.running = true;
+  anaLoading();
+  // 辨析屏的 AI 研判开关独立于互动模式；关闭时走纯规则（离线可用）
+  const cfg = analyzeAIOn() ? activeAICfg() : null;
+  $('anaMsg').innerHTML = '';
+
+  const input = p
+    ? (p.kind === 'image'
+        ? { text: pasted || '', imageDataUrl: p.dataUrl, name: p.name, kind: 'image' }
+        : { text: (p.text + '\n' + pasted).trim(), name: p.name, kind: 'text' })
+    : { text: pasted, name: '粘贴内容', kind: 'text' };
+
+  try {
+    const r = await analyze(input, cfg, { callChat });
+    anaState.lastRun = r;
+    $('anaState').innerHTML = '';
+    anaRenderResult(r);
+  } catch (err) {
+    const code = err && err.code;
+    if (code === 'empty') {
+      anaError('内容为空', err.message, '重新选择文件');
+    } else {
+      anaError('分析失败', (err && err.message ? err.message : String(err)) + ' 请检查网络或 AI 配置后重试。', '重试');
+    }
+  } finally {
+    anaState.running = false;
+    anaIdleDone();
+  }
+}
+$('anaRun').onclick = () => anaRun();
+
+/** 转义，避免上传内容与 AI 文本里的尖括号破坏结构 */
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+$('anaSpec').innerHTML = anaSpecText();
+anaRenderEngine();
+$('anaBack').onclick = () => goto('s-home');
+
+/**
+ * 「测试视觉」：用一张 1×1 的测试图问模型「这是什么颜色」，
+ * 以此判定当前模型是否支持图片输入。
+ * 这是把「模型不支持视觉」与「这张截图难辨」区分开的关键一步——
+ * 前者换模型即可，后者要改图或改用文字。
+ */
+$('anaAiVision').onclick = async () => {
+  const cfg = analyzeAIOn() ? activeAICfg() : null;
+  if (!cfg) {
+    const v = validateSettings({ baseUrl: aiCfg.baseUrl, apiKey: aiCfg.apiKey, model: aiCfg.model });
+    setAIStatus('anaAiStatus', '无法测试：' + (aiCfg.analyzeEnabled ? v.errors.join('；') : '请先勾选「启用 AI 研判」并填好接口地址 / API Key / 模型'), 'err');
+    return;
+  }
+  setAIStatus('anaAiStatus', '正在测试模型能否读取图片…', '');
+  try {
+    const raw = await callChat(cfg, buildVisionProbeMessages(), { timeoutMs: 20000, maxTokens: 200 });
+    const j = judgeVisionProbe(raw);
+    const vinfo = describeVisionSupport(cfg.model, cfg.baseUrl);
+    const tip = vinfo.suggestModel
+      ? `请把模型改成「${vinfo.suggestModel}」后重试。`
+      : `请改用支持视觉的模型（如 ${vinfo.examples.join('、')} 等）后重试。`;
+    if (j.state === 'yes') {
+      setAIStatus('anaAiStatus',
+        '✓ 模型支持图片输入。' + j.reason + '若截图仍读不出，可裁剪到单个对话窗口或改用文字分析。', 'ok');
+    } else if (j.state === 'no') {
+      setAIStatus('anaAiStatus', '✗ 模型无法读取图片。' + j.reason + tip, 'err');
+    } else {
+      setAIStatus('anaAiStatus', '? 没能确认模型能否读图。' + j.reason + tip, 'err');
+    }
+  } catch (err) {
+    setAIStatus('anaAiStatus', '测试失败：' + (err && err.message ? err.message : String(err)), 'err');
+  }
+};
+
+renderCards();
+renderHeroStats();
+$('clock').textContent = now();
+</script>
+</body>
+</html>
