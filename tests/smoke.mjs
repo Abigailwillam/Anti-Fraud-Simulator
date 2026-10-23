@@ -52,6 +52,10 @@ function mk(id) {
               toggle(c, on) { if (on === undefined) { this._s.has(c) ? this._s.delete(c) : this._s.add(c); } else { on ? this._s.add(c) : this._s.delete(c); } },
             },
             click() { if (this.onclick) this.onclick(); },
+            // 布局相关：DOM 桩没有排版引擎，统一给零尺寸（等价于「元素不可见」）
+            getBoundingClientRect: () => ({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 }),
+            offsetWidth: 0, offsetHeight: 0, offsetLeft: 0, offsetTop: 0,
+            scrollTo() {},
           };
         });
       // case-head 的父级是 article.case，展开状态挂在它身上
@@ -83,6 +87,10 @@ function mk(id) {
     addEventListener(k, fn) { (this._ls ||= {})[k] = fn; },
     dispatchEvent(ev) { const fn = (this._ls || {})[ev.type]; if (fn) fn({ target: this }); return true; },
     focus() {},
+    // 布局相关：DOM 桩没有排版引擎，统一给零尺寸（等价于「元素不可见」）
+    getBoundingClientRect: () => ({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 }),
+    scrollTo() {},
+    scrollLeft: 0, clientWidth: 0, clientHeight: 0, offsetWidth: 0, offsetHeight: 0, offsetLeft: 0, offsetTop: 0,
   };
 }
 /**
@@ -112,7 +120,8 @@ const document = {
   querySelector: (sel) => (nodes['sel:' + sel] ||= mk(sel)),
 };
 const ctx = vm.createContext({
-  document, console, setTimeout, clearTimeout, Math, JSON, Date, window: { scrollTo() {} },
+  document, console, setTimeout, clearTimeout, Math, JSON, Date,
+  window: { scrollTo() {}, addEventListener() {}, removeEventListener() {} },
   Promise, AbortController, Object, Array, String, Number, RegExp, Error, Event,
   localStorage: (() => { const m = new Map(); return {
     getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, v), removeItem: (k) => m.delete(k) }; })(),
@@ -242,6 +251,24 @@ check('拉黑被识别为终止', r2.includes('演练复盘报告'));
 
 // --- 流程三：AI 设置面板不得出现在手机屏幕上 ---
 /** 从原始 HTML 中按 div 配平抽取某个 class 的元素子树 */
+/** 按 id 抽取元素子树（结构重排后 class 组合不再唯一，改用 id 定位更稳） */
+function extractById(html, id) {
+  const open = html.indexOf('id="' + id + '"');
+  if (open < 0) return '';
+  const tag = html.lastIndexOf('<section', open) >= html.lastIndexOf('<div', open)
+    ? html.lastIndexOf('<section', open) : html.lastIndexOf('<div', open);
+  if (tag < 0) return '';
+  const tagName = html[tag + 1] === 's' ? 'section' : 'div';
+  let depth = 0, i = tag;
+  while (i < html.length) {
+    const next = html.indexOf('<' + tagName, i + 1);
+    const close = html.indexOf('</' + tagName + '>', i + 1);
+    if (close < 0) break;
+    if (next >= 0 && next < close) { depth++; i = next; }
+    else { if (depth === 0) return html.slice(tag, close + tagName.length + 3); depth--; i = close; }
+  }
+  return '';
+}
 function extractElement(html, className) {
   const open = html.indexOf(`class="${className}"`);
   if (open < 0) return '';
@@ -257,7 +284,7 @@ function extractElement(html, className) {
   return '';
 }
 const phoneHtml = extractElement(html, 'phone');
-const settingsHtml = extractElement(html, 'panel side');
+const settingsHtml = extractById(html, 'settings');
 // 防假阴性：先证明抽取函数确实抓到了完整子树，否则「设置不在手机内」会空洞通过
 check('手机外壳抽取完整（含三个视图层）',
   phoneHtml.includes('v-home') && phoneHtml.includes('v-list') && phoneHtml.includes('v-chat'),
@@ -788,25 +815,36 @@ await withAI(async () => ({ ok: true, json: async () => ({ choices: [{ message: 
 /* --- 响应式规则：桌面/平板/手机三档必须都在，否则窄屏会横向溢出 --- */
 const css = html.match(/<style>([\s\S]*?)<\/style>/)[1];
 function mediaBlock(px) {
-  const i = css.indexOf('@media(max-width:' + px + 'px){');
-  if (i < 0) return null;
-  let d = 0;
-  const j = css.indexOf('{', i);
-  for (let k = j; k < css.length; k++) {
-    if (css[k] === '{') d++;
-    else if (css[k] === '}') { d--; if (d === 0) return css.slice(j + 1, k); }
+  // 同一断点可能拆成多个 @media 块（如手机断点里手机壳与结果卡分开写），全部收集
+  const tag = '@media(max-width:' + px + 'px){';
+  const out = [];
+  let idx = 0;
+  while (true) {
+    const i = css.indexOf(tag, idx);
+    if (i < 0) break;
+    let d = 0;
+    const j = css.indexOf('{', i);
+    let end = -1;
+    for (let k = j; k < css.length; k++) {
+      if (css[k] === '{') d++;
+      else if (css[k] === '}') { d--; if (d === 0) { end = k; break; } }
+    }
+    if (end < 0) break;
+    out.push(css.slice(j + 1, end));
+    idx = end;
   }
-  return null;
+  return out.length ? out.join('\n') : null;
 }
 check('平板断点：侧栏改为纵向堆叠',
   mediaBlock(940) && /grid-template-columns:1fr/.test(mediaBlock(940)));
 check('窄屏断点：首页入口单列',
-  mediaBlock(760) && /grid-template-columns:1fr/.test(mediaBlock(760)));
+  mediaBlock(900) && /grid-template-columns:1fr/.test(mediaBlock(900)));
 const b640 = mediaBlock(640);
 check('手机断点：手机外壳随宽度自适应',
   !!b640 && /width:100%;max-width:414px/.test(b640) && /aspect-ratio/.test(b640),
   '固定 390px 在窄屏会横向溢出');
-check('手机断点：面板内边距收窄', !!b640 && /\.wrap\{padding:14px\}/.test(b640));
+check('手机断点：面板内边距收窄',
+  !!mediaBlock(760) && /\.screen-in\{padding:16px 14px 22px\}/.test(mediaBlock(760)));
 
 let failed = 0;
 for (const [name, ok, extra] of checks) {

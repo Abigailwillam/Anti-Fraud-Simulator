@@ -112,6 +112,27 @@ const homeTxt = await evalJs('document.body.innerText');
 check('首页出现「诈骗辨析」入口', homeTxt.includes('诈骗辨析'), homeTxt.slice(0, 120));
 await shot('01-home');
 
+// --- 顶栏导航（改版后新增的全局导航）---
+const navInfo = await evalJs(`(() => {
+  const btns = [...document.querySelectorAll('#nav button')];
+  return JSON.stringify({
+    count: btns.length,
+    labels: btns.map(b => b.textContent.trim()),
+    active: btns.filter(b => b.classList.contains('on')).map(b => b.textContent.trim()),
+  });
+})()`);
+const nav = JSON.parse(navInfo || '{}');
+check('顶栏导航有 4 个入口', nav.count === 4, navInfo);
+check('顶栏默认高亮「首页」', (nav.active || []).join() === '首页', navInfo);
+await evalJs(`document.querySelector('#nav button[data-go="s-library"]').click()`);
+await sleep(400);
+const libOn = await evalJs(`document.getElementById('s-library').classList.contains('on')`);
+check('★ 顶栏可切到案例库', libOn === true, '点击后未切换');
+const navActive2 = await evalJs(`[...document.querySelectorAll('#nav button.on')].map(b=>b.textContent.trim()).join()`);
+check('★ 切换后顶栏高亮跟随', navActive2 === '战术图鉴', navActive2);
+await evalJs(`document.querySelector('#nav button[data-go="s-home"]').click()`);
+await sleep(300);
+
 // --- 进入辨析屏 ---
 await evalJs('document.getElementById("goAnalyze").click()');
 await sleep(600);

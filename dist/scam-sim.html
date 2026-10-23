@@ -5,619 +5,841 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>反诈演练 · 案例库与互动模式</title>
 <style>
-  :root{
-    --bg:#eef0f4; --panel:#ffffff; --line:#e3e6ec; --ink:#1b1f27; --muted:#5d6472;
-    --blue:#1a6dff; --blue-soft:#eaf1ff; --red:#d93025; --amber:#e08600; --green:#1e8e3e;
-    --wx-green:#07c160; --radius:14px; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font:15px/1.65 "PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;}
-  .wrap{max-width:1180px;margin:0 auto;padding:20px}
-  header h1{margin:0 0 6px;font-size:20px}
-  header p{margin:0 0 16px;font-size:13px;color:var(--muted)}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-    box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
-  .layout{display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start}
-  @media(max-width:940px){.layout{grid-template-columns:1fr}}
+/* ══════════════════════════════════════════════════════════════
+   反诈演练 · 设计系统
+   风格：neo-brutalist（黄底 / 纯黑描边 / 硬阴影 / 圆角贴纸）
+   所有颜色、描边、圆角、阴影、字号均来自下面的令牌，改一处即可全局换肤
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  /* —— 颜色 —— */
+  --ink:#16130d;          /* 主文字与所有描边 */
+  --paper:#fffdf6;        /* 卡片纸面 */
+  --cream:#f4ecdb;        /* 页面底色 / 侧栏底色 */
+  --sun:#ffd84d;          /* 顶栏黄 / 主强调色 */
+  --sun-2:#ffc72e;
+  --sun-soft:#fff2c4;
+  --pink:#ff5c7a;         /* 主操作色 */
+  --pink-soft:#ffe4ea;
+  --orange:#ff8a3d;       /* 筛选激活 / 中高危 */
+  --orange-soft:#ffe9d8;
+  --mint:#3fd9a0;         /* 安全 / 低危 */
+  --mint-soft:#dcf8ee;
+  --sky:#4c9aff;          /* 分类标签 */
+  --sky-soft:#e4efff;
+  --violet:#9b7bff;       /* 监控面板 */
+  --navy:#2f3e7c;         /* 警帽藏青 */
+  --violet-soft:#efe9ff;
+  --muted:#6d6557;        /* 次要文字 */
+  --line:rgba(22,19,13,.16);
+  /* 语义别名：复盘报告等旧代码仍在用 --red / --amber / --green */
+  --red:var(--pink); --amber:#e08600; --green:#0f7a52;
 
-  /* ============ 顶层路由 ============ */
-  .screen{display:none}
-  .screen.on{display:block}
-  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-  .backlink{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);
-    background:var(--panel);color:var(--ink);border-radius:99px;padding:7px 14px;
-    font:inherit;font-size:13px;cursor:pointer}
-  .backlink:hover{border-color:var(--blue);color:var(--blue)}
+  /* —— 描边 / 圆角 / 阴影 —— */
+  --bd:2.5px solid var(--ink);
+  --bd-thin:2px solid var(--ink);
+  --r-xl:26px; --r-lg:18px; --r-md:13px; --r-sm:9px;
+  --hard:4px 4px 0 var(--ink);
+  --hard-lg:6px 6px 0 var(--ink);
+  --hard-sm:3px 3px 0 var(--ink);
 
-  /* ============ 首页 ============ */
-  .hero{padding:34px 30px;border-radius:20px;margin-bottom:18px;
-    background:linear-gradient(135deg,#1a3a8f 0%,#1a6dff 52%,#4f9bff 100%);color:#fff;
-    box-shadow:0 12px 32px rgba(26,109,255,.22)}
-  .hero h2{margin:0 0 8px;font-size:26px;letter-spacing:.5px}
-  .hero p{margin:0;opacity:.92;font-size:14px;max-width:640px}
-  .hero .stats{display:flex;gap:26px;margin-top:20px;flex-wrap:wrap}
-  .hero .stat b{display:block;font-size:22px;line-height:1.2}
-  .hero .stat span{font-size:12px;opacity:.85}
+  --font:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,-apple-system,sans-serif;
+  /* 微信模拟器保留自己的绿色调，与页面主色区分开 */
+  --wx-green:#07c160;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--cream);color:var(--ink);
+  font:15px/1.72 var(--font);-webkit-font-smoothing:antialiased}
+button,input,textarea{font-family:inherit}
+h1,h2,h3,h4,h5{margin:0;font-weight:900;letter-spacing:-.2px}
+b{font-weight:800}
 
-  .entries{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
-  @media(max-width:760px){.entries{grid-template-columns:1fr}}
-  .entry{position:relative;border:1px solid var(--line);border-radius:18px;padding:26px 24px;
-    background:var(--panel);cursor:pointer;transition:.18s;overflow:hidden;text-align:left;
-    font:inherit;color:inherit;box-shadow:var(--shadow);display:block;width:100%}
-  .entry::after{content:'';position:absolute;inset:0;border-radius:18px;pointer-events:none;
-    background:linear-gradient(135deg,rgba(26,109,255,.05),transparent 55%);opacity:0;transition:.18s}
-  .entry:hover{transform:translateY(-3px);border-color:var(--blue);box-shadow:0 12px 28px rgba(16,24,40,.1)}
-  .entry:hover::after{opacity:1}
-  .entry .badge{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;
-    justify-content:center;font-size:26px;margin-bottom:14px;background:var(--blue-soft)}
-  .entry h3{margin:0 0 8px;font-size:18px}
-  .entry p{margin:0 0 14px;font-size:13.5px;color:var(--muted);line-height:1.7}
-  .entry ul{margin:0;padding-left:18px;font-size:12.5px;color:var(--muted);line-height:1.9}
-  .entry .go{position:absolute;right:22px;bottom:20px;color:var(--blue);font-size:13px;font-weight:600}
+/* ══════════ 应用外壳 ══════════ */
+.shell{max-width:1240px;margin:22px auto;background:var(--paper);border:var(--bd);
+  border-radius:var(--r-xl);box-shadow:var(--hard-lg);overflow:hidden}
+@media(max-width:760px){.shell{margin:10px 8px;border-radius:20px;box-shadow:4px 4px 0 var(--ink)}}
 
-  /* ============ 案例库 ============ */
-  .lib-head{margin-bottom:14px}
-  .lib-head h2{margin:0 0 4px;font-size:19px}
-  .lib-head p{margin:0;font-size:13px;color:var(--muted)}
-  .searchbar{position:relative;margin-bottom:14px}
-  .searchbar input{width:100%;padding:12px 40px 12px 40px;border:1px solid var(--line);
-    border-radius:12px;font:inherit;font-size:14px;background:var(--panel)}
-  .searchbar input:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,109,255,.12)}
-  .searchbar .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px}
-  .searchbar .clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;
-    background:#eceef2;color:var(--muted);border-radius:50%;width:22px;height:22px;cursor:pointer;
-    font-size:13px;line-height:1;display:none}
-  .searchbar .clear.on{display:block}
+/* ══════════ 顶栏 ══════════ */
+.topbar{background:var(--sun);border-bottom:var(--bd);display:flex;align-items:center;gap:14px;
+  padding:11px 20px;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:9px;font-weight:900;font-size:17px;letter-spacing:.4px;white-space:nowrap}
+.brand .mark{width:30px;height:30px;border:var(--bd-thin);border-radius:9px;background:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:var(--hard-sm)}
+.nav{display:flex;gap:3px;flex-wrap:wrap}
+.nav button{border:0;background:transparent;font-size:14px;font-weight:800;color:var(--ink);
+  padding:7px 14px;border-radius:99px;cursor:pointer;white-space:nowrap}
+.nav button:hover{background:rgba(255,255,255,.6)}
+.nav button.on{background:#fff;border:var(--bd-thin);box-shadow:var(--hard-sm);font-weight:900}
+.topbar .status{margin-left:auto;display:flex;align-items:center;gap:7px;background:#fff;
+  border:var(--bd-thin);border-radius:99px;padding:6px 13px;font-size:12.5px;font-weight:800;
+  box-shadow:var(--hard-sm);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.topbar .status i{width:7px;height:7px;border-radius:50%;background:var(--pink);flex:0 0 auto;display:block}
+@media(max-width:760px){
+  .topbar{padding:9px 12px;gap:8px}
+  .brand{font-size:15px}
+  .nav{order:3;width:100%;overflow-x:auto;padding-bottom:2px}
+  .nav button{font-size:13px;padding:6px 11px}
+  .topbar .status{font-size:11.5px;padding:5px 10px}
+}
 
-  .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
-  /* 分类卡片的宽高内容为 flex 布局，避免 grid 尺寸塌陷 */
-  .cat{min-width:0}
-  .cat{border:1px solid var(--line);border-radius:12px;padding:12px 13px;background:var(--panel);
-    cursor:pointer;transition:.15s;text-align:left;font:inherit;color:inherit}
-  .cat:hover{border-color:var(--blue);transform:translateY(-2px)}
-  .cat.on{background:var(--blue-soft);border-color:var(--blue)}
-  .cat .top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-  .cat .ico{font-size:17px}
-  .cat .nm{font-size:14px;font-weight:600}
-  .cat .n{font-size:11.5px;color:var(--muted)}
-  .cat .high{color:var(--red);font-weight:600}
-  .cat .blurb{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:5px}
+/* ══════════ 屏幕容器 ══════════ */
+.screen{display:none}
+.screen.on{display:block}
+.screen-in{padding:24px 26px 30px}
+@media(max-width:760px){.screen-in{padding:16px 14px 22px}}
+.page-head{margin-bottom:18px}
+.page-head h2{font-size:24px;margin-bottom:4px}
+.page-head p{margin:0;font-size:13.5px;color:var(--muted);max-width:70ch}
 
-  .cases{display:grid;gap:12px;margin-top:14px}
-  .case{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
-  .case-head{width:100%;border:0;background:transparent;padding:15px 16px;cursor:pointer;
-    text-align:left;font:inherit;color:inherit;display:block}
-  .case-head:hover{background:#fafbfc}
-  .case .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:7px}
-  .chip{font-size:11.5px;padding:2px 8px;border-radius:6px;background:#f1f3f6;color:var(--muted)}
-  .chip.cattag{background:var(--blue-soft);color:var(--blue)}
-  .chip.sev{background:#fdecea;color:var(--red)}
-  .chip.sev.中高危{background:#fff4e5;color:var(--amber)}
-  .chip.sev.中危{background:#fff9db;color:#a16207}
-  .chip.sev.低危{background:#e6f4ea;color:var(--green)}
-  .case h4{margin:0 0 6px;font-size:15.5px;line-height:1.5}
-  .case .sum{margin:0;font-size:13px;color:var(--muted);line-height:1.7}
-  .case .chev{color:var(--muted);font-size:12px;transition:.2s;display:inline-block;margin-top:8px}
-  .case.open .chev{transform:rotate(180deg)}
-  .case-body{display:none;padding:0 16px 16px;border-top:1px dashed var(--line);margin-top:12px}
-  .case.open .case-body{display:block}
-  .blk{margin-top:14px}
-  .blk h5{margin:0 0 7px;font-size:13.5px;display:flex;align-items:center;gap:6px}
-  .blk ol,.blk ul{margin:0;padding-left:20px;font-size:13.5px;line-height:1.85;color:#333}
-  .blk.say li{color:#8a4b00}
-  .blk.say h5{color:#a16207}
-  .blk.crack h5{color:var(--red)} .blk.crack li{color:#7a2620}
-  .blk.act h5{color:var(--green)} .blk.act li{color:#1c5c33}
-  .quote{background:#fffaf0;border-left:3px solid #f0b429;padding:8px 12px;border-radius:0 8px 8px 0;
-    margin:6px 0;font-size:13.5px;color:#7a4a00}
-  .tags{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
-  .tag-s{font-size:11.5px;color:var(--muted);background:#f1f3f6;border-radius:6px;padding:2px 8px}
+/* ══════════ 通用面板 / 卡片 ══════════ */
+.panel{background:var(--paper);border:var(--bd);border-radius:var(--r-lg);padding:18px;
+  margin-bottom:18px;box-shadow:var(--hard)}
+.panel > h3{font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 
-  .empty{text-align:center;padding:44px 20px;color:var(--muted)}
-  .empty .big{font-size:34px;margin-bottom:10px}
-  .pager{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:18px;flex-wrap:wrap}
-  .pager button{border:1px solid var(--line);background:var(--panel);border-radius:9px;
-    padding:7px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
-  .pager button:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
-  .pager button:disabled{opacity:.4;cursor:not-allowed}
-  .pager .pg{min-width:32px;text-align:center;font-size:13px;padding:7px 8px;border-radius:9px;
-    border:1px solid transparent;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit}
-  .pager .pg.on{background:var(--blue);color:#fff}
-  .result-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;
-    flex-wrap:wrap;margin-top:16px;font-size:13px;color:var(--muted)}
-  .crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
-  .crumb b{color:var(--ink)}
-  @media(max-width:640px){
-    .wrap{padding:14px}
-    .hero{padding:24px 20px}
-    .hero h2{font-size:21px}
-    .cats{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
-    .case .meta{gap:6px}
-    /* 手机外壳改为撑满可用宽度，避免固定 390px 在窄屏溢出 */
-    .phone{width:100%;max-width:414px;height:auto;aspect-ratio:390/800;padding:10px;
-      border-radius:36px}
-    .screen-phone{border-radius:28px}
-    .notch{width:34%;height:22px}
-    .statusbar{height:38px}
-    .wx-head{height:86px;padding-top:38px}
-    /* 侧栏与手机不再并排，改纵向堆叠 */
-    .row2{grid-template-columns:1fr}
-  }
+/* ══════════ 按钮 ══════════ */
+button.primary{background:var(--pink);color:#fff;border:var(--bd);border-radius:12px;padding:11px 20px;
+  font-size:14.5px;font-weight:800;cursor:pointer;box-shadow:var(--hard-sm);transition:transform .12s,box-shadow .12s}
+button.primary:hover{transform:translate(-2px,-2px);box-shadow:var(--hard)}
+button.primary:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink)}
+button.ghost{background:#fff;color:var(--ink);border:var(--bd);border-radius:12px;padding:10px 17px;
+  font-size:14px;font-weight:700;cursor:pointer;box-shadow:var(--hard-sm);transition:transform .12s,box-shadow .12s}
+button.ghost:hover{transform:translate(-2px,-2px);box-shadow:var(--hard)}
+button.ghost.sm{padding:7px 13px;font-size:12.5px;border-radius:10px}
+.btn-row{display:flex;gap:9px;margin-top:6px;flex-wrap:wrap;align-items:center}
 
-  /* ============ 手机外壳 ============ */
-  .phone{width:390px;height:800px;margin:0 auto;background:#111;border-radius:44px;
-    padding:12px;box-shadow:0 24px 60px rgba(16,24,40,.22),0 0 0 2px #2a2f3a;position:relative}
-  .screen-phone{width:100%;height:100%;background:#000;border-radius:34px;overflow:hidden;position:relative}
-  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;
-    background:#000;border-radius:0 0 18px 18px;z-index:99}
-  .statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;
-    padding:0 22px;font-size:12px;color:#fff;position:absolute;top:0;left:0;right:0;z-index:98;
-    pointer-events:none;font-weight:600}
-  .view{position:absolute;inset:0;display:none;flex-direction:column;background:#fff}
-  .view.on{display:flex}
+/* ══════════ 表单 ══════════ */
+.fld{display:block;margin-bottom:10px}
+.fld > span{display:block;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:5px}
+.fld input{width:100%;padding:10px 12px;border:var(--bd-thin);border-radius:11px;font-size:13.5px;background:#fff}
+.fld input:focus{outline:0;box-shadow:var(--hard-sm)}
+.row2{display:grid;grid-template-columns:1fr 116px;gap:10px}
+@media(max-width:520px){.row2{grid-template-columns:1fr}}
 
-  /* ============ 桌面 ============ */
-  .home{background:linear-gradient(160deg,#5b7cfa 0%,#8e6ef5 40%,#f093a8 100%)}
-  .home-top{padding:52px 22px 8px;color:#fff}
-  .home-top h2{margin:0;font-size:22px}
-  .home-top p{margin:4px 0 0;font-size:12px;opacity:.85}
-  .apps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;padding:20px 14px}
-  .app{text-align:center;color:#fff;font-size:11px;cursor:default}
-  .app .ico{width:56px;height:56px;border-radius:14px;margin:0 auto 6px;display:flex;
-    align-items:center;justify-content:center;font-size:26px;background:rgba(255,255,255,.2)}
-  .app.wechat .ico{background:linear-gradient(160deg,#4ade80,#07c160)}
-  .app.dim{opacity:.55}
-  .home-hint{margin:auto 16px 16px;background:rgba(255,255,255,.16);backdrop-filter:blur(6px);
-    color:#fff;border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.6}
-  .homebar{height:22px;display:flex;align-items:center;justify-content:center}
-  .homebar i{width:130px;height:5px;border-radius:99px;background:currentColor;opacity:.35;display:block}
+/* 开关 */
+.switch-row{margin-bottom:10px}
+.switch{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;font-weight:700}
+.switch input{display:none}
+.track{width:40px;height:23px;border-radius:99px;background:#d8d2c4;border:var(--bd-thin);position:relative;
+  transition:.18s;flex:0 0 auto}
+.knob{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;
+  border:var(--bd-thin);transition:.18s}
+.switch input:checked + .track{background:var(--mint)}
+.switch input:checked + .track .knob{left:19px}
 
-  /* ============ 微信 ============ */
-  .wx-head{height:92px;padding-top:44px;background:#ededed;border-bottom:.5px solid #d9d9d9;
-    display:flex;align-items:center;padding-left:14px;font-size:16px;font-weight:600;flex:0 0 auto}
-  .wx-head .back{width:22px;font-size:20px;margin-right:6px;cursor:pointer;color:#333}
-  .wx-body{flex:1;overflow-y:auto;background:#ededed}
-  .chats .row{display:flex;gap:12px;padding:12px 14px;align-items:center;cursor:pointer;
-    border-bottom:.5px solid #e3e3e3;background:#fff}
-  .chats .row:active{background:#d9d9d9}
-  .ava{width:46px;height:46px;border-radius:6px;flex:0 0 auto;display:flex;align-items:center;
-    justify-content:center;color:#fff;font-size:19px;font-weight:500}
-  .chats .meta{flex:1;min-width:0}
-  .chats .n{font-size:15px;margin-bottom:2px;display:flex;justify-content:space-between}
-  .chats .t{font-size:12.5px;color:#8c8c8c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .badge{background:var(--red);color:#fff;font-size:11px;border-radius:99px;padding:0 6px;height:17px;
-    line-height:17px;min-width:17px;text-align:center}
-  .wx-foot{height:56px;padding:8px 10px;background:#f7f7f7;border-top:.5px solid #d9d9d9;
-    display:flex;gap:8px;align-items:center;flex:0 0 auto}
-  .wx-foot input{flex:1;padding:9px 11px;border:0;border-radius:6px;background:#fff;font:inherit;font-size:14px}
-  .wx-foot .send{background:var(--wx-green);color:#fff;border:0;border-radius:6px;padding:9px 14px;
-    font:inherit;font-size:14px;cursor:pointer}
-  .wx-foot .blk{background:#fff;border:1px solid #d0d0d0;border-radius:6px;padding:9px 12px;
-    font:inherit;font-size:13px;cursor:pointer;color:#555}
+/* ══════════ 提示 / 状态 ══════════ */
+.hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7}
+.hint.ok{color:#0f7a52;font-weight:700}
+.hint.warn{color:#a35b00;font-weight:800}
+.hint.warn button{margin-left:6px}
+#aiStatus.ok{color:#0f7a52} #aiStatus.err{color:#c0392b}
+#anaAiStatus.ok{color:#0f7a52} #anaAiStatus.err{color:#c0392b}
+.engine-tag{font-size:12px;font-weight:700;color:var(--muted);margin-top:8px;
+  background:var(--sun-soft);border:var(--bd-thin);border-radius:99px;padding:4px 12px;display:inline-block}
+.alert{border:var(--bd-thin);border-radius:12px;padding:10px 13px;font-size:12.5px;margin:9px 0;line-height:1.75}
+.alert.warn{background:var(--sun-soft)}
+.alert.danger{background:var(--pink-soft)}
+.tag{display:inline-block;background:var(--pink-soft);border:var(--bd-thin);border-radius:99px;
+  padding:2px 10px;font-size:12px;margin:0 6px 6px 0;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+th,td{border-bottom:1.5px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:800}
+ul.rf{margin:6px 0 0;padding-left:20px}
+ul.rf li{margin-bottom:5px}
+details summary{cursor:pointer;font-size:13px;font-weight:700;padding:7px 0}
+.meter{height:10px;background:#e6dfd0;border:var(--bd-thin);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;transition:.3s}
+.kv{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:7px;gap:12px}
+.kv b,.kv span:last-child{color:var(--ink);font-weight:800}
+.spinner{display:inline-block;width:15px;height:15px;border:2.5px solid var(--line);
+  border-top-color:var(--pink);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted);padding:26px 4px}
 
-  /* 聊天气泡 */
-  .msgs{padding:14px 12px 20px;display:flex;flex-direction:column;gap:14px}
-  .sys{align-self:center;background:rgba(0,0,0,.06);color:#666;font-size:11.5px;padding:4px 10px;
-    border-radius:5px;max-width:88%;text-align:center}
-  .sys.link{background:#fff;border:1px solid #e0e0e0;color:#333}
-  .msg{display:flex;gap:8px;max-width:82%;align-items:flex-start}
-  .msg .bubble{background:#fff;padding:9px 12px;border-radius:5px;font-size:14.5px;
-    white-space:pre-wrap;line-height:1.55;word-break:break-word;box-shadow:0 1px 1px rgba(0,0,0,.04)}
-  .msg .ava{width:38px;height:38px;font-size:16px;border-radius:5px}
-  .msg.me{align-self:flex-end;flex-direction:row-reverse}
-  .msg.me .bubble{background:#95ec69}
-  .stage{align-self:center;font-size:11px;color:#999;background:rgba(0,0,0,.04);padding:3px 9px;border-radius:99px}
-  .typing{align-self:flex-start;display:flex;gap:8px;align-items:flex-end}
-  .typing .bubble{color:#888;font-style:italic}
+/* ══════════ 首页 ══════════ */
+.hero{display:grid;grid-template-columns:1.4fr .6fr;gap:28px;align-items:center;
+  border:var(--bd);border-radius:var(--r-xl);background:var(--paper);padding:26px 30px;box-shadow:var(--hard)}
+.hero h2{margin:0 0 10px;font-size:clamp(26px,3.6vw,40px);line-height:1.24}
+.hero h2 mark{background:linear-gradient(transparent 60%,var(--sun) 60%);color:inherit;padding:0 2px}
+.hero p{margin:0 0 18px;font-size:14px;color:var(--muted);max-width:54ch}
+.hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.mini-chips{display:flex;gap:8px;flex-wrap:wrap}
+.mini-chips span{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+  border:var(--bd-thin);border-radius:99px;padding:4px 11px;background:#fff}
+.mascot{display:flex;flex-direction:column;align-items:center;gap:12px}
+.mascot .disc{width:186px;height:186px;border-radius:50%;background:#fff;overflow:hidden;border:var(--bd);
+  display:flex;align-items:center;justify-content:center;line-height:1;
+  box-shadow:var(--hard);transform:rotate(-3deg)}
+.mascot .disc svg{width:76%;height:76%;display:block}
+.mascot-img{width:100%;height:100%;object-fit:contain;display:block}
 
-  /* 侧栏 */
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
-  .card{border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;transition:.15s;background:#fff}
-  .card:hover{border-color:var(--blue);transform:translateY(-2px)}
-  .card.sel{border-color:var(--blue);background:var(--blue-soft)}
-  .card .top{display:flex;gap:10px;align-items:center;margin-bottom:6px}
-  .card h3{margin:0;font-size:14.5px}
-  .card .lv{font-size:11.5px;color:var(--red);font-weight:600;display:block;margin-bottom:4px}
-  .card p{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
-  .side h3{margin:0 0 10px;font-size:15px}
-  .kv{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px}
-  .meter{height:8px;background:#e8eaef;border-radius:99px;overflow:hidden}
-  .meter i{display:block;height:100%;transition:.3s}
-  .alert{border-radius:10px;padding:9px 12px;font-size:12.5px;margin:8px 0}
-  .alert.danger{background:#fdecea;color:var(--red);border:1px solid #f5c6c2}
-  .alert.warn{background:#fff6e5;color:var(--amber);border:1px solid #ffe0a3}
-  .tag{display:inline-block;background:#fdecea;color:var(--red);border-radius:6px;padding:2px 8px;
-    font-size:12px;margin:0 6px 6px 0}
-  button.primary{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:10px 16px;
-    font:inherit;font-size:14px;cursor:pointer}
-  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
-  th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
-  th{color:var(--muted);font-weight:600}
-  ul.rf{margin:6px 0 0;padding-left:20px}
-  ul.rf li{margin-bottom:4px}
-  details summary{cursor:pointer;font-size:13px;padding:6px 0}
-  .hint{font-size:12px;color:var(--muted);margin-top:8px}
-  /* 模型能力提示：颜色区分「能用 / 不能用 / 不确定」 */
-  .hint.ok{color:var(--green)}
-  .hint.warn{color:var(--amber);font-weight:600}
-  .hint.warn button{margin-left:6px}
-  .report h2{margin:0 0 6px;font-size:17px}
-  /* 设置面板 */
-  .switch-row{margin-bottom:8px}
-  .switch{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px}
-  .switch input{display:none}
-  .track{width:38px;height:22px;border-radius:99px;background:#d0d4dc;position:relative;
-    transition:.2s;flex:0 0 auto}
-  .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
-    background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-  .switch input:checked + .track{background:var(--green)}
-  .switch input:checked + .track .knob{left:18px}
-  .switch-label{font-weight:500}
-  .fld{display:block;margin-bottom:8px}
-  .fld span{display:block;font-size:11.5px;color:var(--muted);margin-bottom:3px}
-  .fld input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
-    font:inherit;font-size:13px;background:#fafbfc}
-  .fld input:focus{outline:0;border-color:var(--blue);background:#fff}
-  .row2{display:grid;grid-template-columns:1fr 100px;gap:8px}
-  .btn-row{display:flex;gap:8px;margin-top:4px}
-  button.ghost{background:#eef0f4;color:var(--ink);border:0;border-radius:8px;
-    padding:8px 12px;font:inherit;font-size:13px;cursor:pointer}
-  button.ghost.sm{padding:7px 12px;font-size:12.5px}
-  .aifields.off{display:none}
-  #aiStatus.ok{color:var(--green)} #aiStatus.err{color:var(--red)}
-  #anaAiStatus.ok{color:var(--green)} #anaAiStatus.err{color:var(--red)}
-  .engine-tag{font-size:11.5px;color:var(--muted);margin-top:6px}
 
-  /* ============ 诈骗辨析 ============ */
-  .drop{border:2px dashed var(--line);border-radius:16px;background:var(--panel);
-    padding:30px 20px;text-align:center;cursor:pointer;transition:.18s}
-  .drop:hover,.drop.drag{border-color:var(--blue);background:var(--blue-soft)}
-  .drop .big{font-size:34px;margin-bottom:8px}
-  .drop .t1{font-size:15px;font-weight:600;margin-bottom:6px}
-  .drop .t2{font-size:12.5px;color:var(--muted);line-height:1.7}
-  .picked{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;
-    border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fafbfc;margin-top:12px}
-  .picked b{font-weight:600}
-  .picked .x{margin-left:auto;border:0;background:#eceef2;color:var(--muted);border-radius:7px;
-    padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
-  textarea.chatbox{width:100%;min-height:150px;padding:12px;border:1px solid var(--line);
-    border-radius:12px;font:inherit;font-size:13.5px;line-height:1.7;background:#fafbfc;resize:vertical}
-  textarea.chatbox:focus{outline:0;border-color:var(--blue);background:#fff;
-    box-shadow:0 0 0 3px rgba(26,109,255,.12)}
-  .verdict{border-radius:16px;padding:20px;border:1px solid var(--line);background:var(--panel);
-    box-shadow:var(--shadow)}
-  .verdict.scam{border-color:#f5c6c2;background:#fffafa}
-  .verdict.clean{border-color:#c7e7cf;background:#fbfefc}
-  .verdict.unknown{border-color:var(--line);background:#fafbfc}
-  .verdict .vt{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-  .verdict .vt h2{margin:0;font-size:24px;letter-spacing:.5px}
-  .verdict .vt .sub{font-size:13px;color:var(--muted)}
-  .verdict .desc{margin:8px 0 0;font-size:13.5px;color:var(--muted)}
-  .verdict .desc b{color:var(--ink)}
-  .sigrow{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;
-    padding:11px 13px;background:#fff;margin-bottom:9px}
-  .sigrow .ic{font-size:19px;flex:0 0 auto}
-  .sigrow .bd{min-width:0;flex:1}
-  .sigrow .nm{font-size:14px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .sigrow .ds{font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:3px}
-  .sigrow .ev{font-size:12px;color:#8a4b00;background:#fffaf0;border-left:3px solid #f0b429;
-    padding:4px 9px;border-radius:0 6px 6px 0;margin-top:6px;word-break:break-word}
-  .sigrow .go{align-self:center;border:1px solid var(--line);background:var(--panel);border-radius:99px;
-    padding:5px 11px;font:inherit;font-size:12px;cursor:pointer;color:var(--blue);white-space:nowrap}
-  .sigrow .go:hover{border-color:var(--blue);background:var(--blue-soft)}
-  .hintbox{border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:13px;
-    line-height:1.8;background:#fafbfc}
-  .hintbox b{display:block;margin-bottom:4px;font-size:13.5px}
-  .err{display:flex;gap:12px;align-items:flex-start;border:1px solid #f5c6c2;background:#fdecea;
-    border-radius:12px;padding:13px 15px;color:#7a2620}
-  .err .ic{font-size:18px;flex:0 0 auto}
-  .err .bd{flex:1;min-width:0}
-  .err .bd b{display:block;margin-bottom:3px;font-size:13.5px}
-  .err .bd p{margin:0;font-size:12.5px;line-height:1.7}
-  .err .bd .btn-row{margin-top:9px}
-  .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line);
-    border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .loading{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted);
-    padding:26px 4px}
-  @media(max-width:940px){.an-grid{grid-template-columns:1fr}}
-  @media(max-width:640px){
-    .drop{padding:22px 14px}
-    .verdict{padding:16px}
-    .verdict .vt h2{font-size:20px}
-    .sigrow{flex-wrap:wrap}
-    .sigrow .go{margin-left:32px}
-  }
+.mascot .bubble{position:relative;background:#fff;border:var(--bd-thin);border-radius:14px;
+  padding:9px 14px;font-size:12.5px;font-weight:800;box-shadow:var(--hard-sm);max-width:230px;text-align:center}
+.mascot .badge-live{background:var(--mint);border:var(--bd-thin);border-radius:99px;padding:4px 12px;
+  font-size:12px;font-weight:900;box-shadow:var(--hard-sm)}
+@media(max-width:860px){.hero{grid-template-columns:1fr;padding:22px 20px}.mascot .disc{width:140px;height:140px}}
+
+.entries{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:20px}
+@media(max-width:900px){.entries{grid-template-columns:1fr}}
+.entry{text-align:left;font:inherit;color:inherit;background:var(--paper);border:var(--bd);
+  border-radius:var(--r-lg);padding:20px;cursor:pointer;box-shadow:var(--hard);
+  display:flex;flex-direction:column;gap:9px;transition:transform .14s,box-shadow .14s}
+.entry:hover{transform:translate(-3px,-3px);box-shadow:7px 7px 0 var(--ink)}
+.entry .badge{width:50px;height:50px;border-radius:15px;border:var(--bd-thin);display:flex;
+  align-items:center;justify-content:center;font-size:25px;box-shadow:var(--hard-sm)}
+.entry h3{font-size:18px}
+.entry .kicker{font-size:12px;color:var(--muted);font-weight:700;margin-top:-4px}
+.entry p{margin:0;font-size:13px;color:var(--muted);line-height:1.8}
+.entry .foot{margin-top:auto;padding-top:13px;border-top:2px dashed var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;font-weight:800}
+.entry .go{width:32px;height:32px;border-radius:50%;background:var(--sun);border:var(--bd-thin);
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex:0 0 auto}
+.entry.c-blue .badge{background:var(--sky-soft)}
+.entry.c-pink .badge{background:var(--pink-soft)}
+.entry.c-mint .badge{background:var(--mint-soft)}
+
+.statbar{display:grid;grid-template-columns:repeat(4,1fr);margin-top:20px;background:var(--sun);
+  border:var(--bd);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--hard)}
+.statbar > div{padding:15px 20px;border-right:var(--bd-thin)}
+.statbar > div:last-child{border-right:0}
+.statbar b{display:block;font-size:30px;font-weight:900;line-height:1.15}
+.statbar span{font-size:12.5px;font-weight:800;color:#4b3d17}
+@media(max-width:640px){
+  .statbar{grid-template-columns:repeat(2,1fr)}
+  .statbar > div{border-bottom:var(--bd-thin)}
+  .statbar > div:nth-child(2n){border-right:0}
+  .statbar > div:nth-last-child(-n+2){border-bottom:0}
+}
+
+/* ══════════ 案例库 ══════════ */
+.lib-layout{display:grid;grid-template-columns:238px minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:940px){.lib-layout{grid-template-columns:1fr}}
+.side-panel{background:var(--cream);border:var(--bd);border-radius:var(--r-lg);padding:16px 13px;
+  box-shadow:var(--hard);position:sticky;top:80px}
+@media(max-width:940px){.side-panel{position:static}}
+.side-title{font-size:12px;font-weight:900;letter-spacing:1.2px;color:var(--muted);margin:0 0 11px;padding-left:6px}
+.catlist{display:flex;flex-direction:column;gap:3px}
+.cat{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;font:inherit;
+  color:inherit;text-align:left;padding:8px 10px;border-radius:11px;cursor:pointer;
+  font-size:13.5px;font-weight:700}
+.cat:hover{background:rgba(255,255,255,.75)}
+.cat.on{background:#fff;border:var(--bd-thin);box-shadow:var(--hard-sm);font-weight:900}
+.cat .ico{font-size:15px;flex:0 0 auto}
+.cat .n{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:800;white-space:nowrap}
+.cat.on .n{color:var(--ink)}
+
+.searchbar{position:relative;margin-bottom:12px}
+.searchbar input{width:100%;padding:13px 44px 13px 42px;border:var(--bd);border-radius:14px;
+  font-size:14.5px;background:#fff;box-shadow:var(--hard-sm)}
+.searchbar input:focus{outline:0;box-shadow:var(--hard)}
+.searchbar .ico{position:absolute;left:15px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none}
+.searchbar .clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);border:var(--bd-thin);
+  background:var(--sun-soft);color:var(--ink);border-radius:50%;width:25px;height:25px;cursor:pointer;
+  font-size:12px;line-height:1;display:none;padding:0}
+.searchbar .clear.on{display:block}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filters button{border:var(--bd-thin);background:#fff;border-radius:99px;padding:6px 14px;
+  font-size:13px;font-weight:800;cursor:pointer;box-shadow:var(--hard-sm);color:var(--ink)}
+.filters button:hover{transform:translate(-1px,-1px)}
+.filters button.on{background:var(--orange);color:#fff}
+.result-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  font-size:12.5px;color:var(--muted);font-weight:700;margin-bottom:14px}
+.crumb{font-size:12.5px;color:var(--muted);font-weight:700}
+.crumb b{color:var(--ink)}
+
+.cases{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media(max-width:1100px){.cases{grid-template-columns:1fr}}
+.case{background:#fff;border:var(--bd);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--hard);
+  display:flex;flex-direction:column;min-width:0}
+.case .accent{height:8px;flex:0 0 auto}
+.case-head{width:100%;border:0;background:transparent;padding:15px 18px 14px;cursor:pointer;
+  text-align:left;font:inherit;color:inherit;display:block;flex:1}
+.case-head:hover{background:#fffdf2}
+.case .meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+.chip{font-size:11.5px;padding:3px 10px;border-radius:99px;border:1.5px solid var(--ink);
+  background:#fff;font-weight:800;white-space:nowrap}
+.chip.cattag{background:var(--sky-soft)}
+.chip.sev{background:var(--pink-soft)}
+.chip.sev.中高危{background:var(--orange-soft)}
+.chip.sev.中危{background:var(--sun-soft)}
+.chip.sev.低危{background:var(--mint-soft)}
+.case h4{margin:0 0 7px;font-size:16.5px;line-height:1.5}
+.case .sum{margin:0;font-size:13px;color:var(--muted);line-height:1.8}
+.case .chev{color:var(--ink);font-size:12px;font-weight:800;display:inline-block;margin-top:10px}
+.case.open .chev{transform:rotate(180deg)}
+.case-body{display:none;padding:0 18px 16px;border-top:2px dashed var(--line);margin-top:12px}
+.case.open .case-body{display:block}
+.blk{margin-top:14px}
+.blk h5{font-size:13.5px;display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.blk ol,.blk ul{margin:0;padding-left:20px;font-size:13.5px;line-height:1.9}
+.blk.say h5{color:#a16207} .blk.say li{color:#7a4a00}
+.blk.crack h5{color:#c0392b} .blk.crack li{color:#7a2620}
+.blk.act h5{color:#0f7a52} .blk.act li{color:#1c5c33}
+.quote{background:var(--sun-soft);border-left:3px solid var(--ink);padding:8px 12px;
+  border-radius:0 9px 9px 0;margin:6px 0;font-size:13.5px;color:#7a4a00}
+.tags{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
+.tag-s{font-size:11.5px;color:var(--muted);background:#f1ece0;border-radius:99px;padding:2px 9px;font-weight:700}
+.empty{text-align:center;padding:46px 20px;color:var(--muted)}
+.empty .big{font-size:36px;margin-bottom:10px}
+.pager{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:20px;flex-wrap:wrap}
+.pager button{border:var(--bd-thin);background:#fff;border-radius:11px;padding:7px 14px;
+  font-size:13px;font-weight:700;cursor:pointer;box-shadow:var(--hard-sm);color:var(--ink)}
+.pager button:hover:not(:disabled){transform:translate(-1px,-1px)}
+.pager button:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+.pager .pg{min-width:34px;text-align:center;font-size:13px;font-weight:800;padding:7px 8px;border-radius:11px;
+  border:1.5px solid transparent;cursor:pointer;background:transparent;color:var(--muted)}
+.pager .pg.on{background:var(--ink);color:#fff}
+
+/* ══════════ 真人实战：手机 + 侧栏 ══════════ */
+.drill-layout{display:grid;grid-template-columns:266px minmax(0,1fr) 302px;gap:20px;align-items:start}
+@media(max-width:1180px){.drill-layout{grid-template-columns:266px minmax(0,1fr)}.drill-side{grid-column:1/-1}}
+@media(max-width:900px){.drill-layout{grid-template-columns:1fr}}
+/* 中列：手机 + 紧贴其下方的剧本卡片带 */
+.phone-col{display:flex;flex-direction:column;align-items:center;gap:16px;min-width:0}
+.drill-side{background:var(--violet-soft);border:var(--bd);border-radius:var(--r-lg);padding:16px;box-shadow:var(--hard)}
+.drill-side h3{font-size:15px;margin-bottom:12px}
+
+/* 风险环 */
+.ring{width:124px;height:124px;border-radius:50%;margin:0 auto 12px;position:relative;
+  background:conic-gradient(var(--pink) calc(var(--p,0)*1%),#fff 0);
+  border:var(--bd);display:flex;align-items:center;justify-content:center;box-shadow:var(--hard-sm)}
+.ring::after{content:'';position:absolute;inset:14px;border-radius:50%;background:var(--violet-soft);
+  border:2px solid var(--ink)}
+.ring b{position:relative;z-index:1;font-size:34px;font-weight:900;line-height:1}
+.ring small{position:relative;z-index:1;font-size:11px;font-weight:800;margin-left:2px}
+.ring-wrap{text-align:center;margin-bottom:14px}
+.ring-wrap .cap{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px}
+.mascot-card{background:#fff;border:var(--bd-thin);border-radius:14px;padding:12px;margin-bottom:14px;
+  box-shadow:var(--hard-sm);display:flex;gap:11px;align-items:center}
+.mascot-card .face{width:46px;height:46px;border-radius:13px;background:#fff;overflow:hidden;border:var(--bd-thin);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden}
+.mascot-card .face svg{width:82%;height:82%;display:block}
+.mascot-card .tx{font-size:12px;color:var(--muted);line-height:1.6}
+.mascot-card .tx b{display:block;font-size:13px;color:var(--ink);margin-bottom:2px}
+
+/* 手机外壳 */
+.phone{width:390px;height:800px;margin:0 auto;background:#0d0d0d;border:var(--bd);border-radius:46px;
+  padding:11px;box-shadow:var(--hard-lg);position:relative}
+.screen-phone{width:100%;height:100%;background:#000;border-radius:36px;overflow:hidden;position:relative}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;
+  background:#000;border-radius:0 0 18px 18px;z-index:99}
+.statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;font-size:12px;color:#fff;position:absolute;top:0;left:0;right:0;z-index:98;
+  pointer-events:none;font-weight:700}
+.view{position:absolute;inset:0;display:none;flex-direction:column;background:#fff}
+.view.on{display:flex}
+@media(max-width:640px){
+  .phone{width:100%;max-width:414px;height:auto;aspect-ratio:390/800;padding:9px;border-radius:36px}
+  .screen-phone{border-radius:28px}
+  .notch{width:34%;height:22px}
+  .statusbar{height:38px}
+  .wx-head{height:86px;padding-top:38px}
+}
+
+/* 手机桌面 */
+.home{background:linear-gradient(160deg,#5b7cfa 0%,#8e6ef5 40%,#f093a8 100%)}
+.home-top{padding:52px 22px 8px;color:#fff}
+.home-top h2{font-size:22px}
+.home-top p{margin:4px 0 0;font-size:12px;opacity:.85}
+.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;padding:20px 14px}
+.app{text-align:center;color:#fff;font-size:11px;cursor:default}
+.app .ico{width:56px;height:56px;border-radius:14px;margin:0 auto 6px;display:flex;
+  align-items:center;justify-content:center;font-size:26px;background:rgba(255,255,255,.2)}
+.app.wechat .ico{background:linear-gradient(160deg,#4ade80,#07c160)}
+.app.dim{opacity:.55}
+.home-hint{margin:auto 16px 12px;background:rgba(255,255,255,.16);backdrop-filter:blur(6px);
+  color:#fff;border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.6}
+.homebar{height:22px;display:flex;align-items:center;justify-content:center}
+.homebar i{width:130px;height:5px;border-radius:99px;background:currentColor;opacity:.35;display:block}
+
+/* 手机下方：剧本封面流（水平 coverflow，选中居中、两侧偏移） */
+.scn-dock{width:100%;background:var(--cream);border:var(--bd);border-radius:var(--r-lg);
+  padding:16px 18px 18px;box-shadow:var(--hard)}
+.scn-dock-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.scn-dock-head h3{font-size:16px;margin:0}
+.scn-dock-head p{margin:0;font-size:12.5px;color:var(--muted)}
+.scn-strip{display:flex;align-items:center;gap:16px;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  padding:4px 0;cursor:grab;touch-action:pan-y;position:relative}
+.scn-strip::-webkit-scrollbar{display:none}
+.scn-strip.dragging{scroll-snap-type:none;scroll-behavior:auto;cursor:grabbing}
+.scn-track{display:contents}
+.scn-card{flex:0 0 250px;max-width:250px;scroll-snap-align:center;
+  background:#fff;border:2.5px solid rgba(20,19,13,.14);border-radius:18px;padding:14px 15px;
+  box-shadow:0 6px 18px rgba(20,19,13,.18);font:inherit;color:inherit;cursor:pointer;text-align:left;
+  display:flex;flex-direction:column;gap:1px;
+  transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .32s,box-shadow .32s,border-color .32s;
+  transform:scale(.78);opacity:.5}
+.scn-card.active{transform:scale(1);opacity:1;border-color:var(--ink);box-shadow:7px 7px 0 var(--ink)}
+.scn-card.confirmed{border-color:#2ecc71;box-shadow:0 0 0 3px rgba(46,204,113,.35),7px 7px 0 var(--ink)}
+.scn-card .lv{font-size:11px;font-weight:800;color:#c0392b;letter-spacing:.4px}
+.scn-card .row1{display:flex;align-items:center;gap:10px;margin:3px 0 4px}
+.scn-card .ava{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:20px;font-weight:800;flex:0 0 auto}
+.scn-card h3{margin:0;font-size:16px;line-height:1.2}
+.scn-card .ttl{font-size:13px;font-weight:700;color:var(--ink);margin:2px 0 1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scn-card .d{font-size:11.5px;color:var(--muted);line-height:1.55;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.scn-card .pick{margin-top:7px;font-size:11px;font-weight:800;color:#0a7a45;opacity:0;transition:opacity .3s}
+.scn-card.active .pick{opacity:1}
+.scn-dock-foot{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.scn-confirm{flex:1 1 240px;min-width:0;display:flex;align-items:center;gap:8px;
+  background:rgba(46,204,113,.16);border:1.5px solid #2ecc71;color:#0a7a45;border-radius:14px;
+  padding:10px 14px;font-size:12.5px;font-weight:700;line-height:1.4}
+.scn-confirm b{color:#0a7a45}
+.scn-confirm .tick{width:20px;height:20px;border-radius:50%;background:#2ecc71;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto}
+.scn-dock-foot #startBtn{flex:0 0 auto;margin-left:auto;white-space:nowrap}
+@media(max-width:560px){
+  .scn-card{flex:0 0 78%;max-width:none}
+  .scn-dock{padding:14px 13px 16px}
+}
+
+/* 微信 */
+.wx-head{height:92px;padding-top:44px;background:#ededed;border-bottom:.5px solid #d9d9d9;
+  display:flex;align-items:center;padding-left:14px;font-size:16px;font-weight:700;flex:0 0 auto}
+.wx-head .back{width:22px;font-size:20px;margin-right:6px;cursor:pointer;color:#333}
+.wx-body{flex:1;overflow-y:auto;background:#ededed}
+.chats .row{display:flex;gap:12px;padding:12px 14px;align-items:center;cursor:pointer;
+  border-bottom:.5px solid #e3e3e3;background:#fff}
+.chats .row:active{background:#d9d9d9}
+.ava{width:46px;height:46px;border-radius:6px;flex:0 0 auto;display:flex;align-items:center;
+  justify-content:center;color:#fff;font-size:19px;font-weight:700}
+.chats .meta{flex:1;min-width:0}
+.chats .n{font-size:15px;margin-bottom:2px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chats .t{font-size:12.5px;color:#8c8c8c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chats .badge{background:#fa5151;color:#fff;font-size:11px;border-radius:99px;padding:0 6px;height:17px;
+  line-height:17px;min-width:17px;text-align:center;flex:0 0 auto}
+.wx-foot{height:56px;padding:8px 10px;background:#f7f7f7;border-top:.5px solid #d9d9d9;
+  display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.wx-foot input{flex:1;padding:9px 11px;border:0;border-radius:6px;background:#fff;font:inherit;font-size:14px}
+.wx-foot .send{background:var(--wx-green);color:#fff;border:0;border-radius:6px;padding:9px 14px;
+  font:inherit;font-size:14px;cursor:pointer;font-weight:700}
+.wx-foot .blk{background:#fff;border:1px solid #d0d0d0;border-radius:6px;padding:9px 12px;
+  font:inherit;font-size:13px;cursor:pointer;color:#555}
+
+/* 聊天气泡 */
+.msgs{padding:14px 12px 20px;display:flex;flex-direction:column;gap:14px}
+.sys{align-self:center;background:rgba(0,0,0,.06);color:#666;font-size:11.5px;padding:4px 10px;
+  border-radius:5px;max-width:88%;text-align:center}
+.sys.link{background:#fff;border:1px solid #e0e0e0;color:#333}
+.msg{display:flex;gap:8px;max-width:82%;align-items:flex-start}
+.msg .bubble{background:#fff;padding:9px 12px;border-radius:5px;font-size:14.5px;
+  white-space:pre-wrap;line-height:1.55;word-break:break-word;box-shadow:0 1px 1px rgba(0,0,0,.04)}
+.msg .ava{width:38px;height:38px;font-size:16px;border-radius:5px}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.msg.me .bubble{background:#95ec69}
+.stage{align-self:center;font-size:11px;color:#777;background:rgba(0,0,0,.05);padding:3px 9px;border-radius:99px}
+.typing{align-self:flex-start;display:flex;gap:8px;align-items:flex-end}
+.typing .bubble{color:#888;font-style:italic}
+
+/* 复盘报告 */
+.report h2{margin:0 0 6px;font-size:17px}
+.report .blk{margin-top:12px}
+
+/* ══════════ 诈骗辨析 ══════════ */
+.ana-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:1000px){.ana-layout{grid-template-columns:1fr}}
+.ana-out{background:var(--cream);border:var(--bd);border-radius:var(--r-lg);padding:16px;box-shadow:var(--hard)}
+.ana-out .panel{box-shadow:var(--hard-sm);margin-bottom:14px;background:#fff}
+.ana-out .panel:last-child{margin-bottom:0}
+@media(max-width:1000px){.ana-out{padding:14px}}
+.drop{border:2.5px dashed var(--ink);border-radius:var(--r-lg);background:#fff;padding:28px 20px;
+  text-align:center;cursor:pointer;transition:.16s}
+.drop:hover,.drop.drag{background:var(--sun-soft);transform:translate(-1px,-1px)}
+.drop .big{font-size:34px;margin-bottom:8px}
+.drop .t1{font-size:15.5px;font-weight:900;margin-bottom:6px}
+.drop .t2{font-size:12.5px;color:var(--muted);line-height:1.8}
+.picked{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;
+  border:var(--bd-thin);border-radius:12px;padding:10px 13px;background:var(--sun-soft);margin-top:12px}
+.picked b{font-weight:800}
+.picked .x{margin-left:auto;border:var(--bd-thin);background:#fff;color:var(--ink);border-radius:9px;
+  padding:4px 11px;font:inherit;font-size:12.5px;cursor:pointer;font-weight:700}
+textarea.chatbox{width:100%;min-height:150px;padding:13px;border:var(--bd-thin);border-radius:14px;
+  font:inherit;font-size:13.5px;line-height:1.8;background:#fff;resize:vertical}
+textarea.chatbox:focus{outline:0;box-shadow:var(--hard-sm)}
+
+.verdict{border:var(--bd);border-radius:var(--r-lg);padding:20px;background:#fff;box-shadow:var(--hard);margin-bottom:16px}
+.verdict.scam{background:var(--pink-soft)}
+.verdict.clean{background:var(--mint-soft)}
+.verdict.unknown{background:var(--sun-soft)}
+.verdict .vt{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.verdict .vt h2{margin:0;font-size:23px;letter-spacing:-.3px}
+.verdict .vt .sub{font-size:12.5px;color:var(--muted);font-weight:700}
+.verdict .vt .lvl{margin-left:auto;border:var(--bd-thin);border-radius:99px;padding:3px 12px;
+  font-size:12px;font-weight:900;color:#fff;flex:0 0 auto;align-self:center}
+.verdict .desc{margin:9px 0 0;font-size:13.5px;color:#4a4238}
+.verdict .desc b{color:var(--ink)}
+.err{display:flex;gap:12px;align-items:flex-start;border:var(--bd);background:var(--pink-soft);
+  border-radius:var(--r-lg);padding:14px 16px;color:#7a2620;box-shadow:var(--hard-sm);margin-bottom:16px}
+.err .ic{font-size:18px;flex:0 0 auto}
+.err .bd{flex:1;min-width:0}
+.err .bd b{display:block;margin-bottom:3px;font-size:13.5px}
+.err .bd p{margin:0;font-size:12.5px;line-height:1.75}
+.err .bd .btn-row{margin-top:10px}
+.sigrow{display:flex;gap:11px;align-items:flex-start;border:var(--bd-thin);border-radius:13px;
+  padding:12px 14px;background:#fff;margin-bottom:10px;box-shadow:var(--hard-sm)}
+.sigrow .ic{font-size:19px;flex:0 0 auto}
+.sigrow .bd{min-width:0;flex:1}
+.sigrow .nm{font-size:14px;font-weight:900;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sigrow .nm .idx{width:21px;height:21px;border-radius:7px;background:var(--sun);border:var(--bd-thin);
+  display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:900;flex:0 0 auto}
+.sigrow .ds{font-size:12.5px;color:var(--muted);line-height:1.7;margin-top:3px}
+.sigrow .ev{font-size:12px;color:#7a4a00;background:var(--sun-soft);border-left:3px solid var(--ink);
+  padding:4px 10px;border-radius:0 7px 7px 0;margin-top:6px;word-break:break-word}
+.sigrow .go{align-self:center;border:var(--bd-thin);background:#fff;border-radius:99px;
+  padding:5px 12px;font:inherit;font-size:12px;cursor:pointer;font-weight:800;white-space:nowrap;flex:0 0 auto}
+.sigrow .go:hover{background:var(--sun-soft)}
+.hintbox{border:var(--bd-thin);border-radius:13px;padding:12px 14px;font-size:13px;
+  line-height:1.85;background:#fff}
+.hintbox b{display:block;margin-bottom:4px;font-size:13.5px}
+.chip.ai{background:var(--mint-soft);font-size:11px;padding:1px 8px}
+@media(max-width:640px){
+  .verdict{padding:16px}
+  .verdict .vt h2{font-size:20px}
+  .sigrow{flex-wrap:wrap}
+  .sigrow .go{margin-left:30px}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="shell">
 
-<!-- ══════════ 屏幕一：首页 ══════════ -->
-<section class="screen on" id="s-home">
-  <div class="hero">
-    <h2>反诈意识训练</h2>
-    <p>看懂骗局，才谈得上避开它。这里提供三条路径：先在案例库里把常见手法认熟，
-       用辨析功能判断手上的聊天记录，再回到互动模式里亲自和骗子过招。</p>
-    <div class="stats" id="heroStats"></div>
-  </div>
-
-  <div class="entries">
-    <button class="entry" id="goLibrary">
-      <div class="badge">📚</div>
-      <h3>诈骗案例库</h3>
-      <p>按类型查阅真实手法的拆解：它怎么运作、话术长什么样、破绽在哪、遇到了怎么办。</p>
-      <ul>
-        <li>10 大类诈骗类型，覆盖公检法、投资、客服、贷款、杀猪盘等</li>
-        <li>全文关键词搜索，跨分类直接命中</li>
-        <li>每条案例含手法拆解 · 典型话术 · 破绽识别 · 处置建议</li>
-      </ul>
-      <span class="go">进入 →</span>
-    </button>
-
-    <button class="entry" id="goDrill">
-      <div class="badge">💬</div>
-      <h3>互动模式</h3>
-      <p>模拟一部手机，在微信里和那个「好友」聊天。他会按剧本分阶段推进，你以受骗者身份回话。</p>
-      <ul>
-        <li>4 个剧本：冒充公检法、虚假投资、冒充客服、刷单兼职</li>
-        <li>规则引擎实时计算风险指数，识破破绽才算过关</li>
-        <li>可选接入 AI，让对话方按人设现场生成话术</li>
-      </ul>
-      <span class="go">进入 →</span>
-    </button>
-
-    <button class="entry" id="goAnalyze">
-      <div class="badge">🔍</div>
-      <h3>诈骗辨析</h3>
-      <p>把收到的聊天记录丢进来，判断对方是不是骗子：给结论、风险等级、可疑点逐条说明。</p>
-      <ul>
-        <li>支持文本与截图，AI 研判 + 规则引擎双层判定</li>
-        <li>输出冒充身份、诱导转账、索取验证码等具体特征</li>
-        <li>给出可直接照做的防骗建议；未配 AI 时离线规则分析</li>
-      </ul>
-      <span class="go">进入 →</span>
-    </button>
-  </div>
-</section>
-
-<!-- ══════════ 屏幕二：案例库 ══════════ -->
-<section class="screen" id="s-library">
-  <div class="topbar">
-    <button class="backlink" id="libBack">‹ 返回首页</button>
-  </div>
-
-  <div class="panel lib-head">
-    <h2>诈骗案例库</h2>
-    <p>收录目的是让你<b>认出</b>骗局，不是教你实施。每条案例都写清破绽在哪、遇到了怎么办。</p>
-  </div>
-
-  <div class="panel">
-    <!-- 搜索栏：始终作用于全库，不受下方分类筛选影响 -->
-    <div class="searchbar">
-      <span class="ico">🔍</span>
-      <input type="text" id="libSearch" placeholder="搜索案例关键词，如：安全账户、验证码、刷单、涨粉…" />
-      <button class="clear" id="libSearchClear" title="清空">✕</button>
-    </div>
-
-    <div class="result-bar">
-      <div class="crumb" id="libCrumb"></div>
-      <div id="libCount"></div>
-    </div>
-
-    <div class="cats" id="libCats" style="margin-top:14px"></div>
-    <div class="cases" id="libCases"></div>
-    <div class="pager" id="libPager"></div>
-  </div>
-</section>
-
-<!-- ══════════ 屏幕三：互动模式（原样保留） ══════════ -->
-<section class="screen" id="s-drill">
-  <div class="topbar">
-    <button class="backlink" id="drillBack">‹ 返回首页</button>
-  </div>
-
-  <header>
-    <h1>互动模式 · 微信里的诈骗好友</h1>
-    <p>模拟手机界面 → 打开微信 → 和那个「好友」聊天。他就是诈骗方。全程为教学演练，不涉及任何真实资金与个人信息。</p>
+  <!-- ══════════ 顶栏：全站导航 ══════════ -->
+  <header class="topbar">
+    <div class="brand"><span class="mark">🛡️</span>反诈演练</div>
+    <nav class="nav" id="nav">
+      <button type="button" data-go="s-home" class="on">首页</button>
+      <button type="button" data-go="s-library">战术图鉴</button>
+      <button type="button" data-go="s-drill">真人实战</button>
+      <button type="button" data-go="s-analyze">真伪鉴定</button>
+    </nav>
+    <div class="status" id="topStatus"><i></i><span>本地规则引擎 · 不用配 Key</span></div>
   </header>
 
-  <div class="layout">
-    <!-- 手机 -->
-    <div class="phone">
-      <div class="screen-phone">
-        <div class="notch"></div>
-        <div class="statusbar" id="statusbar"><span id="clock">20:51</span><span>●●● ⌁ ▮</span></div>
-
-        <!-- 桌面 -->
-        <div class="view home on" id="v-home">
-          <div class="home-top"><h2>演练模式</h2><p>先选择剧本，再进入微信</p></div>
-          <div class="apps">
-            <div class="app wechat" id="app-wechat"><div class="ico">💬</div>微信</div>
-            <div class="app dim"><div class="ico">📷</div>相机</div>
-            <div class="app dim"><div class="ico">🧭</div>浏览器</div>
-            <div class="app dim"><div class="ico">⚙️</div>设置</div>
-            <div class="app dim"><div class="ico">📷</div>相册</div>
-            <div class="app dim"><div class="ico">🗓️</div>日历</div>
-            <div class="app dim"><div class="ico">💳</div>支付</div>
-            <div class="app dim"><div class="ico">📮</div>邮件</div>
+  <!-- ══════════ 屏幕一：首页 ══════════ -->
+  <section class="screen on" id="s-home">
+    <div class="screen-in">
+      <div class="hero">
+        <div>
+          <h2>骗子的话术，<br>今天先<mark>陪练一遍</mark>。</h2>
+          <p>30 条真实套路拆到底，4 场对话实战跟「骗子」别正面，5 分钟一轮，
+             配合本地规则引擎当场复盘——认出破绽，比记住话术管用。</p>
+          <div class="hero-cta">
+            <button type="button" class="primary" id="goDrill">开一局 →</button>
+            <button type="button" class="ghost" id="goLibrary">先看套路</button>
+            <button type="button" class="ghost" id="goAnalyze">验一验真假</button>
           </div>
-          <div class="home-hint" id="homeHint">在右侧选一个诈骗剧本，然后点「微信」图标开始。</div>
-          <div class="homebar" style="color:#fff"><i></i></div>
-        </div>
-
-        <!-- 微信 聊天列表 -->
-        <div class="view" id="v-list">
-          <div class="wx-head">微信</div>
-          <div class="wx-body chats" id="chatList"></div>
-          <div class="wx-foot"><input id="searchInput" placeholder="搜索" disabled /><button class="send" disabled>+</button></div>
-        </div>
-
-        <!-- 微信 聊天窗口 -->
-        <div class="view" id="v-chat">
-          <div class="wx-head"><span class="back" id="backBtn">‹</span><span id="peerName">好友</span></div>
-          <div class="wx-body" id="msgScroll"><div class="msgs" id="msgs"></div></div>
-          <div class="wx-foot">
-            <input id="userInput" placeholder="发消息…" />
-            <button class="blk" id="blockBtn">拉黑</button>
-            <button class="send" id="sendBtn">发送</button>
+          <div class="mini-chips">
+            <span>🔒 离线可用</span>
+            <span>📄 内容不落盘</span>
+            <span id="homeChipCase">📚 30 条真实案例</span>
           </div>
+        </div>
+        <div class="mascot">
+          <div class="disc" id="mascotHero"></div>
+          <div class="bubble">上号！奶龙宝宝陪你练一轮</div>
+          <div class="badge-live">奶龙宝宝在线</div>
+        </div>
+      </div>
+
+      <div class="entries">
+        <button type="button" class="entry c-blue" id="goLibraryCard">
+          <span class="badge">📚</span>
+          <h3>战术图鉴</h3>
+          <div class="kicker">诈骗案例库 · 10 大类 30 条真实套路</div>
+          <p>每条案例都写清：话术怎么出招、被坑在哪、破绽在哪、遇到了怎么办。
+             全文关键词可搜，跨分类直接命中。</p>
+          <div class="foot"><span>10 类 · 30 条</span><span class="go">→</span></div>
+        </button>
+
+        <button type="button" class="entry c-pink" id="goDrillCard">
+          <span class="badge">🎮</span>
+          <h3>真人实战</h3>
+          <div class="kicker">互动模式 · 4 个剧本，微信里跟骗子过招</div>
+          <p>模拟一部手机，在微信里和那个「好友」聊天。他按剧本一步步试探，
+             你要以受骗者身份回话，规则引擎实时算风险指数。</p>
+          <div class="foot"><span>4 个剧本 · 实时评分</span><span class="go">→</span></div>
+        </button>
+
+        <button type="button" class="entry c-mint" id="goAnalyzeCard">
+          <span class="badge">🔍</span>
+          <h3>真伪鉴定</h3>
+          <div class="kicker">诈骗辨析 · 上传聊天记录或截图，当场出结论</div>
+          <p>把那段让你心里发毛的聊天甩进来，逐条指出哪不对劲，
+             给出「是 / 否 / 无法判断」的结论、风险等级与可照做的防骗建议。</p>
+          <div class="foot"><span>文字 · 截图</span><span class="go">→</span></div>
+        </button>
+      </div>
+
+      <div class="statbar" id="heroStats"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ 屏幕二：战术图鉴（案例库） ══════════ -->
+  <section class="screen" id="s-library">
+    <div class="screen-in">
+      <div class="page-head">
+        <h2>战术图鉴 · 诈骗案例库</h2>
+        <p>收录目的是让你<b>认出</b>骗局，不是教你实施。每条案例都写清破绽在哪、遇到了怎么办。</p>
+      </div>
+
+      <div class="lib-layout">
+        <aside class="side-panel">
+          <h4 class="side-title">按骗术找</h4>
+          <div class="catlist" id="libCats"></div>
+        </aside>
+
+        <div>
+          <!-- 搜索栏：始终作用于全库，不受下方分类筛选影响 -->
+          <div class="searchbar">
+            <span class="ico">🔍</span>
+            <input type="text" id="libSearch" placeholder="搜话术、平台名，或者直接搜“借钱”" />
+            <button class="clear" id="libSearchClear" title="清空">✕</button>
+          </div>
+
+          <div class="filters" id="libFilters"></div>
+
+          <div class="result-bar">
+            <div class="crumb" id="libCrumb"></div>
+            <div id="libCount"></div>
+          </div>
+
+          <div class="cases" id="libCases"></div>
+          <div class="pager" id="libPager"></div>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- 侧栏 -->
-    <div>
-      <section class="panel side" id="picker">
-        <h3>1 · 选择诈骗剧本</h3>
-        <div class="cards" id="cards"></div>
-        <div style="margin-top:14px"><button class="primary" id="startBtn">生成微信好友</button></div>
-        <div class="hint">生成后点手机里的「微信」图标，进入聊天。</div>
-      </section>
+  <!-- ══════════ 屏幕三：真人实战（互动模式） ══════════ -->
+  <section class="screen" id="s-drill">
+    <div class="screen-in">
+      <div class="page-head">
+        <h2>真人实战 · 微信里的诈骗好友</h2>
+        <p>模拟手机界面 → 打开微信 → 和那个「好友」聊天。他就是诈骗方。
+           全程为教学演练，不涉及任何真实资金与个人信息。</p>
+      </div>
 
-      <section class="panel side" id="settings">
-        <h3>设置 · AI 对话引擎</h3>
-        <div class="switch-row">
-          <label class="switch">
-            <input type="checkbox" id="aiEnabled" />
-            <span class="track"><span class="knob"></span></span>
-            <span class="switch-label">启用 AI 生成话术</span>
-          </label>
-        </div>
-        <div class="hint" style="margin:0 0 10px">
-          关闭时使用内置知识库话术（离线可用）。启用后由 AI 按人设现场生成，
-          剧情走向与风险评分仍由规则引擎决定，不受模型影响。
-        </div>
-        <div id="aiFields" class="aifields">
-          <label class="fld"><span>接口地址 Base URL</span>
-            <input type="text" id="aiBase" placeholder="https://api.openai.com/v1" /></label>
-          <label class="fld"><span>API Key</span>
-            <input type="password" id="aiKey" placeholder="sk-..." /></label>
-          <div class="row2">
-            <label class="fld"><span>模型</span>
-              <input type="text" id="aiModel" placeholder="gpt-4o-mini" /></label>
-            <label class="fld"><span>温度 0-2</span>
-              <input type="text" id="aiTemp" placeholder="0.9" /></label>
+      <div class="drill-layout">
+        <!-- 左：AI 设置 -->
+        <aside>
+          <section class="panel" id="settings">
+            <h3>设置 · AI 对话引擎</h3>
+            <div class="switch-row">
+              <label class="switch">
+                <input type="checkbox" id="aiEnabled" />
+                <span class="track"><span class="knob"></span></span>
+                <span class="switch-label">启用 AI 生成话术</span>
+              </label>
+            </div>
+            <div class="hint" style="margin:0 0 10px">
+              关闭时使用内置知识库话术（离线可用）。启用后由 AI 按人设现场生成，
+              剧情走向与风险评分仍由规则引擎决定，不受模型影响。
+            </div>
+            <div id="aiFields" class="aifields">
+              <label class="fld"><span>接口地址 Base URL</span>
+                <input type="text" id="aiBase" placeholder="https://api.openai.com/v1" /></label>
+              <label class="fld"><span>API Key</span>
+                <input type="password" id="aiKey" placeholder="sk-..." /></label>
+              <div class="row2">
+                <label class="fld"><span>模型</span>
+                  <input type="text" id="aiModel" placeholder="gpt-4o-mini" /></label>
+                <label class="fld"><span>温度 0-2</span>
+                  <input type="text" id="aiTemp" placeholder="0.9" /></label>
+              </div>
+              <div class="btn-row">
+                <button type="button" class="ghost sm" id="aiTest">测试连接</button>
+                <button type="button" class="ghost sm" id="aiClear">清空</button>
+              </div>
+              <div class="hint" id="aiModelHint"></div>
+              <div class="hint" id="aiStatus">配置存在本机浏览器，不会上传到除你填写的接口地址外的任何地方。</div>
+              <div class="hint" style="margin-top:6px">
+                连接参数与「真伪鉴定」共用同一份配置，在任一处修改都会同步到另一处。
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        <!-- 中：手机 + 紧贴其下方的剧本卡片带 -->
+        <div class="phone-col">
+          <div class="phone">
+            <div class="screen-phone">
+              <div class="notch"></div>
+              <div class="statusbar" id="statusbar"><span id="clock">20:51</span><span>●●● ⌁ ▮</span></div>
+
+              <!-- 桌面 -->
+              <div class="view home on" id="v-home">
+                <div class="home-top"><h2>演练模式</h2><p>先选择剧本，再进入微信</p></div>
+                <div class="apps">
+                  <div class="app wechat" id="app-wechat"><div class="ico">💬</div>微信</div>
+                  <div class="app dim"><div class="ico">📷</div>相机</div>
+                  <div class="app dim"><div class="ico">🧭</div>浏览器</div>
+                  <div class="app dim"><div class="ico">⚙️</div>设置</div>
+                  <div class="app dim"><div class="ico">📷</div>相册</div>
+                  <div class="app dim"><div class="ico">🗓️</div>日历</div>
+                  <div class="app dim"><div class="ico">💳</div>支付</div>
+                  <div class="app dim"><div class="ico">📮</div>邮件</div>
+                </div>
+                <div class="home-hint" id="homeHint">在下方选一个诈骗剧本，点「生成微信好友」后再点「微信」图标开始。</div>
+                <div class="homebar" style="color:#fff"><i></i></div>
+              </div>
+
+              <!-- 微信 聊天列表 -->
+              <div class="view" id="v-list">
+                <div class="wx-head">微信</div>
+                <div class="wx-body chats" id="chatList"></div>
+                <div class="wx-foot"><input id="searchInput" placeholder="搜索" disabled /><button class="send" disabled>+</button></div>
+              </div>
+
+              <!-- 微信 聊天窗口 -->
+              <div class="view" id="v-chat">
+                <div class="wx-head"><span class="back" id="backBtn">‹</span><span id="peerName">好友</span></div>
+                <div class="wx-body" id="msgScroll"><div class="msgs" id="msgs"></div></div>
+                <div class="wx-foot">
+                  <input id="userInput" placeholder="发消息…" />
+                  <button class="blk" id="blockBtn">拉黑</button>
+                  <button class="send" id="sendBtn">发送</button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="btn-row">
-            <button class="ghost sm" id="aiTest">测试连接</button>
-            <button class="ghost sm" id="aiClear">清空</button>
-          </div>
-          <div class="hint" id="aiModelHint"></div>
-          <div class="hint" id="aiStatus">配置存在本机浏览器，不会上传到除你填写的接口地址外的任何地方。</div>
-          <div class="hint" style="margin-top:6px">
-            连接参数与「诈骗辨析」共用同一份配置，在任一处修改都会同步到另一处。
-          </div>
+
+
+          <!-- 手机下方的剧本选择带（水平封面流：选中居中、两侧偏移） -->
+          <section class="scn-dock" id="scnDock">
+            <div class="scn-dock-head">
+              <h3>挑一个剧本</h3>
+              <p>左右滑动把想练的剧本移到中间，点一下中间的卡片确认；确认后点「生成微信好友」。</p>
+            </div>
+            <div class="scn-strip" id="scnStrip">
+              <div class="scn-track" id="scnTrack"></div>
+            </div>
+            <div class="scn-dock-foot">
+              <div class="scn-confirm" id="scnConfirm" style="display:none">
+                <span class="tick">✓</span><span>已选择《<b id="scnName"></b>》· 点「生成微信好友」开始演练</span>
+              </div>
+              <button type="button" class="primary" id="startBtn">生成微信好友</button>
+            </div>
+          </section>
         </div>
-      </section>
 
-      <section class="panel side" id="monitor" style="display:none">
-        <h3>实时监控</h3>
-        <div class="kv"><span>对方身份</span><span id="mPeer" style="color:var(--ink);font-weight:600"></span></div>
-        <div class="kv"><span>当前阶段</span><span id="mStage" style="color:var(--ink)"></span></div>
-        <div class="kv"><span>对话引擎</span><span id="mEngine" style="color:var(--ink)">内置知识库话术</span></div>
-        <div class="kv"><span>风险指数</span><span id="mScore">0</span></div>
-        <div class="meter"><i id="mBar" style="width:0%;background:var(--green)"></i></div>
-        <div id="alertBox"></div>
-        <div class="hint">想提前结束：在聊天框输入「我要报警」，或点「拉黑」，然后在下方报告里查看复盘。</div>
-        <button class="primary" id="reportBtn" style="width:100%;margin-top:12px;display:none">生成复盘报告</button>
-      </section>
+        <!-- 右：监控与复盘 -->
+        <aside class="drill-side">
+          <div class="mascot-card">
+            <span class="face" id="mascotSide"></span>
+            <span class="tx"><b>奶龙宝宝 · 盯梢中</b>风险指数越高，说明你越接近上当；识破破绽才算过关。</span>
+          </div>
 
-      <section class="panel report" id="reportBox" style="display:none"></section>
+          <div class="ring-wrap">
+            <div class="cap">风险指数</div>
+            <div class="ring" id="mRing" style="--p:0"><b id="mScore">0</b><small>/100</small></div>
+          </div>
+
+          <section id="monitor">
+            <div class="kv"><span>对方身份</span><span id="mPeer">—</span></div>
+            <div class="kv"><span>当前阶段</span><span id="mStage">—</span></div>
+            <div class="kv"><span>对话引擎</span><span id="mEngine">内置知识库话术</span></div>
+            <div class="meter" style="margin:8px 0 4px"><i id="mBar" style="width:0%;background:var(--mint)"></i></div>
+            <div id="alertBox"></div>
+            <div class="hint">想提前结束：在聊天框输入「我要报警」，或点「拉黑」，然后生成复盘报告。</div>
+            <button type="button" class="primary" id="reportBtn" style="width:100%;margin-top:12px;display:none">生成复盘报告</button>
+          </section>
+
+          <section class="panel report" id="reportBox" style="display:none"></section>
+        </aside>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ══════════ 屏幕四：诈骗辨析 ══════════ -->
-<section class="screen" id="s-analyze">
-  <div class="topbar">
-    <button class="backlink" id="anaBack">‹ 返回首页</button>
-  </div>
+  <!-- ══════════ 屏幕四：真伪鉴定（诈骗辨析） ══════════ -->
+  <section class="screen" id="s-analyze">
+    <div class="screen-in">
+      <div class="page-head">
+        <h2>真伪鉴定 · 这段聊天是不是骗局</h2>
+        <p>上传聊天记录或截图，得出结论、风险等级、可疑点与防骗建议。
+           结论由规则引擎与 AI 共同判定，AI 未配置时自动走离线规则分析。</p>
+      </div>
 
-  <header>
-    <h1>诈骗辨析 · 这段聊天是不是骗局</h1>
-    <p>上传聊天记录或截图，得出结论、风险等级、可疑点与防骗建议。
-       结论由规则引擎与 AI 共同判定，AI 未配置时自动走离线规则分析。</p>
-  </header>
+      <div class="ana-layout">
+        <!-- 左：输入 -->
+        <div>
+          <section class="panel">
+            <h3>① 提供聊天记录</h3>
 
-  <div class="layout">
-    <!-- 左：输入 -->
-    <div>
-      <section class="panel">
-        <h3 style="margin:0 0 10px;font-size:15px">1 · 提供聊天记录</h3>
+            <div class="drop" id="anaDrop">
+              <div class="big">📎</div>
+              <div class="t1">把截图拖到这里，或点击选择文件</div>
+              <div class="t2" id="anaSpec"></div>
+            </div>
+            <input type="file" id="anaFile" style="display:none" />
 
-        <div class="drop" id="anaDrop">
-          <div class="big">📄</div>
-          <div class="t1">点击选择文件，或把文件拖到这里</div>
-          <div class="t2" id="anaSpec"></div>
+            <div id="anaPicked"></div>
+
+            <div style="margin-top:14px">
+              <label class="fld"><span>或直接粘贴文字（截图请先另存为图片文件）</span></label>
+              <textarea class="chatbox" id="anaText" placeholder="把对方的聊天内容粘贴到这里……"></textarea>
+              <div class="hint" style="margin:6px 0 0">上传文件与粘贴文字可同时使用，内容会合并后一并分析。</div>
+            </div>
+
+            <div class="btn-row" style="margin-top:14px">
+              <button type="button" class="primary" id="anaRun">智能分析</button>
+              <button type="button" class="ghost sm" id="anaDemo">换个示例</button>
+              <button type="button" class="ghost sm" id="anaReset">清空</button>
+            </div>
+            <div id="anaMsg"></div>
+          </section>
+
+          <section class="panel">
+            <h3>② AI 研判引擎</h3>
+            <div class="hint" style="margin:0 0 10px">
+              关闭时仅用本地规则引擎分析（离线可用、结论可复现）；启用后由 AI 补充规则未覆盖的语义线索，
+              规则强信号不会被 AI 推翻。<b>连接参数与真人实战共用同一份配置</b>，在此修改会同步到那边；
+              两处的启用开关互相独立。
+            </div>
+            <div class="switch-row">
+              <label class="switch">
+                <input type="checkbox" id="anaAiEnabled" />
+                <span class="track"><span class="knob"></span></span>
+                <span class="switch-label">启用 AI 研判</span>
+              </label>
+            </div>
+            <div id="anaAiFields" class="aifields">
+              <label class="fld"><span>接口地址 Base URL</span>
+                <input type="text" id="anaAiBase" placeholder="https://api.openai.com/v1" /></label>
+              <label class="fld"><span>API Key</span>
+                <input type="password" id="anaAiKey" placeholder="sk-..." /></label>
+              <div class="row2">
+                <label class="fld"><span>模型</span>
+                  <input type="text" id="anaAiModel" placeholder="gpt-4o-mini" /></label>
+                <label class="fld"><span>温度 0-2</span>
+                  <input type="text" id="anaAiTemp" placeholder="0.9" /></label>
+              </div>
+              <div class="btn-row">
+                <button type="button" class="ghost sm" id="anaAiTest">测试连接</button>
+                <button type="button" class="ghost sm" id="anaAiVision">测试视觉</button>
+                <button type="button" class="ghost sm" id="anaAiClear">清空</button>
+              </div>
+              <div class="hint" id="anaAiModelHint"></div>
+              <div class="hint" id="anaAiStatus">配置保存在本机浏览器，仅发往你填写的接口地址。</div>
+              <div class="hint" style="margin-top:6px">
+                截图识别需要模型支持视觉输入（多模态）。点「测试视觉」可用一张极小的测试图验证当前模型能否读图——
+                若这里就不通，说明是模型不支持图片，换一个支持视觉的模型即可，与图片本身无关。
+              </div>
+            </div>
+            <div class="engine-tag" id="anaEngine">当前：本地规则引擎</div>
+          </section>
         </div>
-        <input type="file" id="anaFile" style="display:none" />
 
-        <div id="anaPicked"></div>
-
-        <div style="margin-top:14px">
-          <label class="fld"><span>或直接粘贴文字（截图请先另存为图片文件）</span></label>
-          <textarea class="chatbox" id="anaText" placeholder="把对方的聊天内容粘贴到这里……"></textarea>
-          <div class="hint" style="margin:6px 0 0">上传文件与粘贴文字可同时使用，内容会合并后一并分析。</div>
+        <!-- 右：结果 -->
+        <div class="ana-out">
+          <div id="anaState"></div>
+          <div id="anaResult"></div>
         </div>
-
-        <div class="btn-row" style="margin-top:12px">
-          <button class="primary" id="anaRun">开始辨析</button>
-          <button class="ghost sm" id="anaDemo">填入示例</button>
-          <button class="ghost sm" id="anaReset">清空</button>
-        </div>
-        <div id="anaMsg"></div>
-      </section>
-
-      <section class="panel">
-        <h3 style="margin:0 0 8px;font-size:15px">AI 研判引擎</h3>
-        <div class="hint" style="margin:0 0 10px">
-          关闭时仅用本地规则引擎分析（离线可用、结论可复现）；启用后由 AI 补充规则未覆盖的语义线索，
-          规则强信号不会被 AI 推翻。<b>连接参数与互动模式共用同一份配置</b>，在此修改会同步到那边；
-          两处的启用开关互相独立。
-        </div>
-        <div class="switch-row">
-          <label class="switch">
-            <input type="checkbox" id="anaAiEnabled" />
-            <span class="track"><span class="knob"></span></span>
-            <span class="switch-label">启用 AI 研判</span>
-          </label>
-        </div>
-        <div id="anaAiFields" class="aifields">
-          <label class="fld"><span>接口地址 Base URL</span>
-            <input type="text" id="anaAiBase" placeholder="https://api.openai.com/v1" /></label>
-          <label class="fld"><span>API Key</span>
-            <input type="password" id="anaAiKey" placeholder="sk-..." /></label>
-          <div class="row2">
-            <label class="fld"><span>模型</span>
-              <input type="text" id="anaAiModel" placeholder="gpt-4o-mini" /></label>
-            <label class="fld"><span>温度 0-2</span>
-              <input type="text" id="anaAiTemp" placeholder="0.9" /></label>
-          </div>
-          <div class="btn-row">
-            <button class="ghost sm" id="anaAiTest">测试连接</button>
-            <button class="ghost sm" id="anaAiVision">测试视觉</button>
-            <button class="ghost sm" id="anaAiClear">清空</button>
-          </div>
-          <div class="hint" id="anaAiModelHint"></div>
-          <div class="hint" id="anaAiStatus">配置保存在本机浏览器，仅发往你填写的接口地址。</div>
-          <div class="hint" style="margin-top:6px">
-            截图识别需要模型支持视觉输入（多模态）。点「测试视觉」可用一张极小的测试图验证当前模型能否读图——
-            若这里就不通，说明是模型不支持图片，换一个支持视觉的模型即可，与图片本身无关。
-          </div>
-        </div>
-        <div class="engine-tag" id="anaEngine">当前：本地规则引擎</div>
-      </section>
+      </div>
     </div>
-
-    <!-- 右：结果 -->
-    <div>
-      <div id="anaState"></div>
-      <div id="anaResult"></div>
-    </div>
-  </div>
-</section>
+  </section>
 
 </div>
 
@@ -3488,11 +3710,91 @@ const $ = (id) => document.getElementById(id);
 
 /* ══════════════ 顶层路由 ══════════════ */
 const SCREENS = ['s-home', 's-library', 's-drill', 's-analyze'];
+/** 顶栏导航与当前屏的映射（按钮 data-go 就是屏 id） */
+const NAV_ITEMS = [
+  { id: 's-home', label: '首页' },
+  { id: 's-library', label: '战术图鉴' },
+  { id: 's-drill', label: '真人实战' },
+  { id: 's-analyze', label: '真伪鉴定' },
+];
+
+/**
+ * 顶栏导航按钮集合。
+ * 走 getElementById + 元素级 querySelectorAll，而不是 document.querySelectorAll：
+ * 前者在任何 DOM 实现下都可用（测试用的 DOM 桩只实现了元素级查询）。
+ */
+function navButtons() {
+  const nav = $('nav');
+  return nav && nav.querySelectorAll ? nav.querySelectorAll('button') : [];
+}
+
+/**
+ * requestAnimationFrame 的安全封装。
+ * 浏览器里用它把 DOM 测量/样式刷新放到下一帧；测试用的 DOM 桩没有这个全局，
+ * 直接调用会抛 ReferenceError 让整个脚本挂掉，故缺省回落到 setTimeout。
+ */
+function raf(fn) {
+  return typeof requestAnimationFrame === 'function'
+    ? requestAnimationFrame(fn)
+    : setTimeout(fn, 16);
+}
+
+/** 顶栏右侧状态胶囊：只显示当前真实状态，不写做不到的事 */
+function renderTopStatus(screen) {
+  const el = $('topStatus');
+  if (!el) return;
+  let text;
+  if (screen === 's-home') {
+    text = `${casesByCategory(null).length} 条真实案例 · ${CASE_CATEGORIES.length} 类手法`;
+  } else if (screen === 's-library') {
+    text = '搜索始终作用于全库';
+  } else if (screen === 's-drill') {
+    text = drillAIOn() ? `AI 话术 · ${aiCfg.model}` : '本地话术 · 不用配 Key';
+  } else {
+    const cfg = analyzeAIOn() ? activeAICfg() : null;
+    text = cfg ? `AI 研判 · ${cfg.model}` : '本地规则引擎 · 不用配 Key';
+  }
+  el.innerHTML = `<i></i><span>${escapeHtml(text)}</span>`;
+}
+
 function goto(name) {
   SCREENS.forEach((s) => $(s).classList.toggle('on', s === name));
+  // 顶栏导航高亮跟随当前屏
+  navButtons().forEach((b) => {
+    b.classList.toggle('on', b.dataset.go === name);
+  });
+  renderTopStatus(name);
   window.scrollTo(0, 0);
   if (name === 's-library') renderLibrary();
+  if (name === 's-drill') centerScnSelected();
 }
+
+/* 进入真人实战屏时，把默认选中剧本滚动居中（卡片带所在屏隐藏时算不出尺寸） */
+function centerScnSelected() {
+  const track = $('scnTrack');
+  if (!track) return;
+  applyScnPad();
+  const sel = track.querySelector('.scn-card[data-id="' + selected + '"]');
+  if (!sel) return;
+  scrollScnTo(sel, false);
+  raf(updateScnActive);
+}
+
+/* 顶栏导航接线 */
+navButtons().forEach((b) => {
+  b.onclick = () => goto(b.dataset.go);
+});
+
+/* ══════════════ 吉祥物：奶龙宝宝（原型图，100% 相似） ══════════════
+ * 直接用用户给的原型照片（base64 内嵌），保证和原型 100% 一致；
+ * 仍是「单文件、双击即用」——base64 内联不算外部依赖。
+ * 容器背景改成白底，贴合原型图的白底；img 用 object-fit:contain 居中。
+ */
+const MASCOT_IMG = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAA4ODAcTERUVFRUcFSAbDiweHxsVUUYkFTtBLFwsKT4kPjNBO3pmYz4pV0l0hEFRO2uPa0aBPl+Bkny0rpaFa63/2wBDAQ4OFQ4OLCRJY18zKTszNyRBbUEkO4dcN4RJTnSHbXpXRkmBUV9UX3qEcXRrXG1JbUZ8hIGvcbaPdKOgp6cElq//wAARCAFdAV0DASIAAhEBAxEB/8QAGwABAQEAAwEBAAAAAAAAAAAAAAECAwQFBgf/xAA6EAEAAgECBQICBwUHBQAAAAAAAQIRAwQSITFRcQVBYXIGEyIzQoGRFBUjMlNSYnOCobHBQ2PR8PH/xAAZAQEBAAMBAAAAAAAAAAAAAAAAAQIDBAX/xAAeEQEBAAMAAwEBAQAAAAAAAAAAAQIDEQQSITETMv/aAAwDAQACEQMRAD8A/RYisxmefk4adoWsco8LgE4adoOGnaGgGeGnaDhp2hoQZ4adoOGnaGgGeGnaDhp2hoBnhr2g4a9oaAZ4adoOGnaGgE4adoOGnaFFE4adoOGnaFAZmtO0HDTtCiCcNO0HDTtAAcNO0HDTtCgHDTtBw07QoDPDTtBw07Q0KM8NO0HDTtDQDPDTtC8NO0KoMcNO0HDTtDQDPDXtBiO0NAMYr2gxHaGsGAZxXtC4jtDQgzw17QcNe0NYMAzw07Qk1r7cmxRK9I8KlekeFAAAAAAAAAAAAABJlLeBlJvWOrgtre0OHMuXZumLKY12p1dNn66OzgHPd2VZcjm+v+B9e4cmYT+2a+sc/wBfDUatJdXkpN+R6x3ItEq6cTMOamr7S6te3HJhZY5wHUxAAAAAAAAAAAAAAAASvSPCpXpHhQAAAAAAAAAAAASZh1dTVmeUdF19XH2e7qzekRzcXkZ1lI3Dbpftdf7MuXT3GlacdJ+LgssZzKOfJlnMM5YWs28pljKRaUXjky1lx5WJWI5BwW3GjVmu505npMeWye0YWyO/p6vtLnefxRLt6WpxQ9Dx87WF45gHWxAAAAAAAAAAAAAASvSPCpXpHhQAAAAAAAAAAEmVcWrbFJn4McrxY87UtE2tae7oX1YnNpmIiIzMz08uXVtaNO3h8Z9Jt3r022npV5RqW+1j4ezgwn9KZ9e3Pr/0Xi3D+0Vmc+2cPQjVpMRes5iYzEx0fjWX6B9H9XczsIi85iNWYr/pybd2GOMYT4+1pfirEtZhwaXKlfDkeVXXi0mUTKK5MuPV1YpSZWJdXeT/AA/zZYscvji49OIm97RWIjnNujg0vVfo9qW4KbilrZ6PmvpNr61dtpUicRa85/J8NW14nMTjw9XVhjY5Ptft+nea2x3d/QtMWx3fI+h7/cbjY6dtSc2rbgmffl0l9PTUmJiWvn862Y/XqgO6IKiqAAAAAAAAAACKgFekeFSvSPCgAAAAAAAAAAOpu7Yp5l23m723OsfBp3XkZY/XR1ImaWjvD5X1f0+270YrE4tS2a56eH1OXW1tvttSc2jE946vNx2XBtuPX5zo/R31e1/4kRSsTznrL7nYbKsUpWsYpT/V26bPZR1ibeejt1xHRlt23YxmtzxiIMsRKuVt41lFwiKrOpSt6WrPvBMs5WfEs6+Z9V9Ntr6E6NuVonNJn/Z8T+4/XuPg+rnr1/C/WL10bxi0Z8unbY6PtaYdevdcWm4V0fS9nXQ0NPRjnMc7T7Z6vool09LQ0tOOX6+7sxJ7+1ZTH1ezS1ZrEx2bdbbWidOPLsw9LC9jVfgAzRQEABQAAAAAARUAr0jwqV6R4UAAAAAAAAAAB4u5vxakz+T172itZmfaHhWmZlx+VeRs1zrGWJlqWJeZXVFysWcbNszHKceAduJckS8uaep/h1Y/zR/y4bav0hr+GlvE4/3InHuZSZeD+2+u/wBCf1WN36/M/cxHzSvDj2plxzLz6z67PWaU+HWXJwbz31s+EXjtZMuLPxysSg5olyQ4IlzVZ4/Er0NpaOcO88rb34bx8XqQ9XRexy5zjQDoYAAAAAAAAAACKgFekeFSvSPCgAAAAAAAAIIg6+7vw6fnk8iXe3d4m2O0OlLzPJy7XTqnHHZxy3ZiXJ+tzMstSyKZkzKIitZGcrkFyM5FG4WGYbgYtw5quCHNVYxrmiZh69bRMRMPIh39tfMYd/jZNOyddtUV3NAAAAoAAAAAAAAlekeFSvSPCgAAAAAACCBLFrxWJmW5dLcamfsx+bXsymEZYzrpXmbWmXHMOSXHLx8r2urH44rOOXLMOOYYs4xLLUs8xkiKjFUUwqiCiosNQjUIjcOaHFDlqrGuWHPo34bOvDkhu15erDKdetDTr6OpxVc71cL7Ry2WKIrNABQAAAAAAABK9I8KlekeFAAAAARUABJmIhLZBx6upFa59/Z50zMuXU1LWlxS8zyNns34Y8YlxzDklmYcdbY4phxzDmmGJgZRwzDMw5ZhiYGUcUwYbmEwKzhcQuJXAM4WIMSsQCxDUQRDUQJVhyQzENwrGtw3DjhyQsrGubTvNZy9CJiYy8uHa0dSc4l3ePn6tOyO4qGXfGlQFAAAAAAEABK9I8NM16R4aAAAAARUAdPX1bTOIc2tqxWPjLz3H5GcjZhOrlJEl5tvW+IzMNIwqsSxMOSWcDJxzDEw5ZhmYFjimEw5ZhnCqxgw3gwDODDeDCBENRBENxAxqRDUQYaVBuEhpYLDUMNQ2Y3jCzrvaOpxRiesOd5lb2rOYejW0TETD0tGfu0ZzjYDpYAAAAAAIioBXpHhpK9I8KAAAAAzMxEZ+DTpbjVn+WPfq17MphFk6619SbWmf0ZyyryM8vauqSRUVGugkqjFUTDRhFYmGcOTDOBWMGIbwYUYwmIcmE4ZBnBhrhMAzhqIMLgQw1BhcKKAqVVZVUXLs7fUxOJ93Ukizbqy9KxynXsji0tTirEuV6+NmTnvwAZIAAAAgAFekeFSvSPCgAAAAkzEPIvebWme8u9utThp5eXNnn+Xnxv1RrPNqHFE5ly5cEbqozkyVFyhkYq0AgM4aAZwYaATEGGgGcQmG0wKzgw0CIKKKiZGQqs5XKok9GYmG56OCJjKUn139tqYtju9F4tbTExL2K2iYep4mXtHPsnGgHW1iAgoCgACV6R4VI6R4VAEAUTKg8zeXibRXs6Fpc+4tE6lvhOHT1L8ni+Re12ap8cunLmdbRnMZdhhGVUQSoqwgxVoyyINZVhciNjOTKiiZEFEygKZZFGhkyDSIKKIMoNOracS7Lp604smS4uzWz1ttbNPEvFpbk9PZ26w6vEy5WrdHfAeq5kRUSiqigIqKJXpHhUr0jwSgAcwUnoBR4OrP27f4kulrWxDua/LVv8AM6O5/keHu/a7tbn2tpnSiXZdPZRjQp4dpJ8XJrJlkylRrK5YViNoyZBsZyZBsZyoKIACAAmTIioZTIrQyZUaVjK5ZDTz95bhvX4w77zfUOul5kyXF2NKZersp+1b5XkaXKIersudreG3xv1hueoA9hxoioCwqQpARUUSvSPCpXpHhUAAAAHj7/T4bxeI6xzeLr7ja8Mxa3D5fWa2jTUpNZ7Pmt16VvLTw8GefKY6eXm+RqvXVqyjl20TGjSJ/sudvVpNbY/uw43NZcWzsqGTKMaNDK5YjRlnJlBrJlAGsrljK5BrJlnJkGsmWcmQMmWcmQaEymQXJlnJlRrLTCsht0N/9XH1czyjPV3oY3G01NfQvFYz9qJ+PJnjjczsxdTT1dOcRWc/F9BstKa6eZ6y8vZem6/468Mdp6vfiIiHZ42u4tG3KZKA7nOgLhFFRVgIqKFekeAr0jwoIKAgoggAPL3lcXie8OnL1N7XOnE9peTMvM8metdWq9QEctbVyZZEGsmWRBrJlnJlBrJlnJkGsmWcmRWsmWTINZMsio1kyyA0MrCwaaYaZQaeptK2imZ95eVGcx5e5p14aVjtV3eLi59tcgDuaAkSQIVFABQEVFCvSPCpXpHhQAAEVBBUQVL0i1Zj4PAvW1bTE+0voXmb3RxPHH5uXycfaNuq8ecSEvMrrRCUYi5EAXJlkRWsoigogKogIuUygCrlBWLSsqRWlSGobMZ1jbx2drSLanP2jL13W22jwUjPWecuy9XTj6xyZ32UBtYCKAKKogACKgFekeFSvSPCgAAIqAAAM3pW0TEtCWSjwdbR1NO+J/KXDL29zo8dJ7x0eJLzN+HrXXry6yio5a2oAKCCCiAqgAAAACAANQqQsMojUO7tdvNp4rRyh1tGnHeI7y92la1rER7O3x8JXPtyaAd7nAAUBQAAAAABK9I8KlekeFAAARUAAAABJjk+cvytaP7z6R87rR/Et8zi8z5G7T+uGZTJZxTLzeuty5Rw8a/WVReOXK5cfFC5UaEzBlRqFYyZQayZZymYByZHHxQTeIF45DLgnVhI1E+I7GViXBEuWqxK9HZRnV/yvZeRsPvJ+R6z1vF/HFs/RAdDWqsqCgKAAAAIABXpHhUr0jwqAAAioAAAAA+e1vvLfM+hno+fv/NPzOLzPxu0/rr2hwWdyYdfUpDy3ZHUtargtqQ5r0s6lq2GySE6+rHu3Xe6ke2XVtEpENmM6tkfSaWy9R1NOt6xGLRnErOw9Xj8GfH/ANe1soxt9L/Dh23pY6ddjz7sylfLzs/Vv6cpGy9W/py+pkX+GB/TJ81Hp3q0/gx+jq73T3e2rW14icz7PsHz3r1f4NJ/7rDZpwxjLXnllXzv7brdogjX1p93WiHJWJedXe7db/HLmrMOvSlnapRiwrkq7FYlmlHPEQRhXd2H3k/I9Z5Oy+8n5P8Aw9Z7Hi/5cOz9EVHQ1hzFAVFUAAAAQACvSPAV6R4EAAAAAAAAB4m50/q7znlEzyn2e2xamnaMWjPlq24TZGWGXq8Dip3cUzXL2b+men26RNfl5OvPpGh7al4/98PPy8fOOjHZHkXrV09SlX0E+i1n/rWT9w7Of5tS8/pH/CTRsZ/1xj5O/DDtbLY7rcakRFZisW52no+p0vRfRaTng4vm5vQrTTrGIiI8OjXp4xz3dWlK1rFY6RGGgd05HIIvJBWnn+obOdxoTSJxPWM/B3xLJkS8fnF9PX07TXUrNZifdyacZw+81dvtNSMXpW3l0L+hejTMzFZr8rg2aLXXjujwKVh2K4el+4dCJ+zq3jzzaj0Sv9WzT/DYt24OjEw3x6fd6FfSNrHW95drT2OwpOYrz7zzlnh4+TDLZHDstK8RN5jGY5RPV6KYiB6OvGYRzZX2AGSIsIsAoAACgAAAgzXpHhUr27KAAAAAAAAAACoqAgCIuUBVAAAAAAFRUAAEABoBRAAAAAFAAAAFSVcUzOZQf//Z';
+['mascotHero', 'mascotSide'].forEach((id) => {
+  const el = $(id);
+  if (el) el.innerHTML = '<img class="mascot-img" alt="奶龙宝宝" src="' + MASCOT_IMG + '">';
+});
 
 /* ══════════════ 案例库 ══════════════
  * 状态三件套：搜索词 / 当前分类 / 当前页码。
@@ -3515,28 +3817,47 @@ function renderHeroStats() {
   const total = stats.reduce((a, b) => a + b.count, 0);
   const high = stats.reduce((a, b) => a + b.high, 0);
   $('heroStats').innerHTML = `
-    <div class="stat"><b>${CASE_CATEGORIES.length}</b><span>诈骗类型</span></div>
-    <div class="stat"><b>${total}</b><span>案例总数</span></div>
-    <div class="stat"><b>${high}</b><span>高危案例</span></div>
-    <div class="stat"><b>${SCENARIO_LIST.length}</b><span>互动剧本</span></div>`;
+    <div><b>${total}</b><span>案例总数</span></div>
+    <div><b>${CASE_CATEGORIES.length}</b><span>诈骗类型</span></div>
+    <div><b>${high}</b><span>高危案例</span></div>
+    <div><b>${SCENARIO_LIST.length}</b><span>互动剧本</span></div>`;
+  const chip = $('homeChipCase');
+  if (chip) chip.textContent = `📚 ${total} 条真实案例`;
 }
 
+/** 案例库左侧分类栏（带条数） */
 function renderCats() {
   const stats = categoryStats();
-  const all = `<button class="cat ${libState.catId === null ? 'on' : ''}" data-cat="">
-      <div class="top"><span class="ico">📚</span><span class="nm">全部分类</span></div>
-      <div class="n">${stats.reduce((a, b) => a + b.count, 0)} 条案例</div>
-      <div class="blurb">按发布时间浏览全部收录案例</div>
+  const allCount = stats.reduce((a, b) => a + b.count, 0);
+  const all = `<button type="button" class="cat ${libState.catId === null ? 'on' : ''}" data-cat="">
+      <span class="ico">📚</span><span class="nm">全部分类</span><span class="n">${allCount}</span>
     </button>`;
   $('libCats').innerHTML = all + CASE_CATEGORIES.map((c) => {
     const s = stats.find((x) => x.id === c.id);
-    return `<button class="cat ${libState.catId === c.id ? 'on' : ''}" data-cat="${c.id}">
-      <div class="top"><span class="ico">${c.icon}</span><span class="nm">${c.name}</span></div>
-      <div class="n">${s.count} 条${s.high ? ` · <span class="high">${s.high} 高危</span>` : ''}</div>
-      <div class="blurb">${c.blurb}</div>
+    return `<button type="button" class="cat ${libState.catId === c.id ? 'on' : ''}" data-cat="${c.id}">
+      <span class="ico">${c.icon}</span><span class="nm">${c.name}</span><span class="n">${s.count}</span>
     </button>`;
   }).join('');
   $('libCats').querySelectorAll('.cat').forEach((el) => {
+    el.onclick = () => {
+      libState.catId = el.dataset.cat || null;
+      libState.page = 1;
+      renderLibrary();
+    };
+  });
+}
+
+/**
+ * 搜索框下方的快捷筛选条：全部 + 前 5 个真实分类。
+ * 设计图上的筛选项是示意性文案，这里一律用案例库真实存在的分类，避免出现点了没反应的标签。
+ */
+function renderFilters() {
+  const quick = CASE_CATEGORIES.slice(0, 5);
+  $('libFilters').innerHTML = [
+    `<button type="button" class="${libState.catId === null ? 'on' : ''}" data-cat="">全部</button>`,
+    ...quick.map((c) => `<button type="button" class="${libState.catId === c.id ? 'on' : ''}" data-cat="${c.id}">${c.icon} ${c.name}</button>`),
+  ].join('');
+  $('libFilters').querySelectorAll('button').forEach((el) => {
     el.onclick = () => {
       libState.catId = el.dataset.cat || null;
       libState.page = 1;
@@ -3549,14 +3870,16 @@ function caseCard(c) {
   const cat = getCategory(c.catId);
   const sevCls = 'sev ' + c.severity;
   return `<article class="case" data-id="${c.id}">
-    <button class="case-head">
+    <div class="accent" style="background:${cat.tone}"></div>
+    <button type="button" class="case-head">
       <div class="meta">
-        <span class="chip cattag">${cat.icon} ${cat.name}</span>
         <span class="chip ${sevCls}">${c.severity}</span>
+        <span class="chip cattag">${cat.icon} ${cat.name}</span>
         <span class="chip">${formatDate(c.date)}</span>
       </div>
       <h4>${c.title}</h4>
       <p class="sum">${c.summary}</p>
+      <div class="tags"><span class="tag-s">手法拆解</span><span class="tag-s">典型话术</span><span class="tag-s">破绽</span><span class="tag-s">怎么破</span></div>
       <span class="chev">展开完整内容 ▾</span>
     </button>
     <div class="case-body">
@@ -3588,6 +3911,7 @@ function renderPager(page, totalPages) {
 
 function renderLibrary() {
   renderCats();
+  renderFilters();
   const kw = libState.keyword.trim();
   const list = sortByDateDesc(libSource());
   const { items, page, totalPages, total } = paginate(list, libState.page, libState.pageSize);
@@ -3624,8 +3948,10 @@ $('libSearchClear').onclick = () => { $('libSearch').value = ''; setKeyword('');
 $('goLibrary').onclick = () => goto('s-library');
 $('goDrill').onclick = () => goto('s-drill');
 $('goAnalyze').onclick = () => goto('s-analyze');
-$('libBack').onclick = () => goto('s-home');
-$('drillBack').onclick = () => goto('s-home');
+// 首页三张入口卡与顶栏按钮等效
+$('goLibraryCard').onclick = () => goto('s-library');
+$('goDrillCard').onclick = () => goto('s-drill');
+$('goAnalyzeCard').onclick = () => goto('s-analyze');
 
 /* ============ 设置（AI 引擎） ============ */
 const AI_STORE_KEY = 'scamsim.ai.v1';
@@ -3828,19 +4154,113 @@ function show(id) { ['v-home','v-list','v-chat'].forEach(v => $(v).classList.tog
 function now() { const d = new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
 function scrollDown() { const s = $('msgScroll'); s.scrollTop = s.scrollHeight; }
 
-function renderCards() {
-  $('cards').innerHTML = SCENARIO_LIST.map(s => `
-    <div class="card ${s.id === selected ? 'sel' : ''}" data-id="${s.id}">
+/* ── 手机下方的剧本封面流（水平 coverflow：选中居中、两侧偏移、拖动/点击确认） ── */
+function renderScnStrip() {
+  const t = $('scnTrack'); if (!t) return;
+  const strip = $('scnStrip');
+  t.innerHTML = SCENARIO_LIST.map(s => `
+    <button type="button" class="scn-card" data-id="${s.id}">
       <span class="lv">${s.level}</span>
-      <div class="top">
-        <div class="ava" style="background:${s.avatarBg}">${s.avatar}</div>
-        <h3>${s.nickname}</h3>
-      </div>
-      <p>${s.title}<br>${s.intro}</p>
-    </div>`).join('');
-  $('cards').querySelectorAll('.card').forEach(el => {
-    el.onclick = () => { selected = el.dataset.id; renderCards(); };
+      <div class="row1"><span class="ava" style="background:${s.avatarBg}">${s.avatar}</span>
+        <h3>${s.nickname}</h3></div>
+      <div class="ttl">${s.title}</div>
+      <div class="d">${s.intro}</div>
+      <div class="pick">▣ 点击选中此剧本</div>
+    </button>`).join('');
+  bindScnStrip();
+  syncScn();
+  // 卡片带所在屏未显示时算不出尺寸，等首次进入视口（真正可见、有宽度）再居中默认选中剧本
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { centerScnSelected(); io.disconnect(); } });
+    }, { threshold: 0.05 });
+    io.observe(strip);
+  } else {
+    raf(updateScnActive);
+  }
+}
+
+/* 卡片带左右留白 = (可视宽 − 卡宽) / 2，保证第一张和最后一张也能真正滚到正中。
+   卡片带宽度随断点变化，CSS 无法用百分比表达，故按实测卡宽动态计算。 */
+function applyScnPad() {
+  const strip = $('scnStrip'); if (!strip) return;
+  const card = strip.querySelector('.scn-card'); if (!card) return;
+  const w = card.offsetWidth; if (!w || !strip.clientWidth) return;
+  strip.style.paddingInline = Math.max(0, (strip.clientWidth - w) / 2) + 'px';
+}
+function updateScnActive() {
+  const strip = $('scnStrip'), track = $('scnTrack');
+  if (!strip || !track) return;
+  const cr = strip.getBoundingClientRect();
+  const center = cr.left + cr.width / 2;
+  let best = null, bestDist = Infinity;
+  track.querySelectorAll('.scn-card').forEach(c => {
+    const r = c.getBoundingClientRect();
+    const d = Math.abs((r.left + r.width / 2) - center);
+    if (d < bestDist) { bestDist = d; best = c; }
+    c.classList.remove('active');
   });
+  if (best) best.classList.add('active');
+}
+function syncScn() {
+  const track = $('scnTrack');
+  if (track) track.querySelectorAll('.scn-card').forEach(c =>
+    c.classList.toggle('confirmed', c.dataset.id === selected));
+  const cf = $('scnConfirm'), nm = $('scnName');
+  if (cf && nm) {
+    if (selected) { const s = getScenario(selected); cf.style.display = 'flex'; nm.textContent = s ? s.contact.nickname : ''; }
+    else cf.style.display = 'none';
+  }
+}
+function scrollScnTo(card, smooth) {
+  const strip = $('scnStrip'); if (!strip || !card) return;
+  const left = card.offsetLeft - (strip.clientWidth - card.offsetWidth) / 2;
+  strip.classList.add('dragging'); // 临时关闭 scroll-snap，避免吸附干扰精确居中
+  if (smooth) {
+    strip.scrollTo({ left, behavior: 'smooth' });
+    setTimeout(() => strip.classList.remove('dragging'), 480);
+  } else {
+    strip.scrollLeft = left;
+    strip.classList.remove('dragging');
+  }
+}
+function snapNearest(strip) {
+  const cr = strip.getBoundingClientRect(), center = cr.left + cr.width / 2;
+  let best = null, bd = Infinity;
+  strip.querySelectorAll('.scn-card').forEach(c => {
+    const r = c.getBoundingClientRect();
+    const d = Math.abs((r.left + r.width / 2) - center);
+    if (d < bd) { bd = d; best = c; }
+  });
+  if (best) scrollScnTo(best);
+}
+function bindScnStrip() {
+  const strip = $('scnStrip'); if (!strip) return;
+  let down = false, startX = 0, startScroll = 0, moved = 0, downCard = null;
+  strip.addEventListener('pointerdown', e => {
+    down = true; moved = 0; startX = e.clientX; startScroll = strip.scrollLeft;
+    downCard = e.target.closest('.scn-card');
+    strip.classList.add('dragging');
+    try { strip.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  strip.addEventListener('pointermove', e => {
+    if (!down) return;
+    const dx = e.clientX - startX; moved = Math.max(moved, Math.abs(dx));
+    strip.scrollLeft = startScroll - dx;
+  });
+  const end = () => {
+    if (!down) return; down = false; strip.classList.remove('dragging');
+    if (moved < 6 && downCard) {
+      if (downCard.classList.contains('active')) { selected = downCard.dataset.id; syncScn(); scrollScnTo(downCard); }
+      else scrollScnTo(downCard);
+    } else if (moved >= 6) { snapNearest(strip); }
+  };
+  strip.addEventListener('pointerup', end);
+  strip.addEventListener('pointercancel', end);
+  strip.addEventListener('wheel', e => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { strip.scrollLeft += e.deltaY; e.preventDefault(); }
+  }, { passive: false });
+  strip.addEventListener('scroll', () => raf(updateScnActive), { passive: true });
 }
 
 function start() {
@@ -3850,7 +4270,6 @@ function start() {
   $('alertBox').innerHTML = '';
   $('reportBtn').style.display = 'none';
   $('monitor').style.display = '';
-  $('picker').style.display = 'none';
   $('userInput').disabled = false; $('sendBtn').disabled = false; $('blockBtn').disabled = false;
   $('peerName').textContent = session.sc.contact.nickname;
   $('mPeer').textContent = session.sc.contact.nickname;
@@ -3929,7 +4348,13 @@ function updateScore(score) {
   $('mScore').textContent = score;
   const bar = $('mBar');
   bar.style.width = Math.min(score, 100) + '%';
-  bar.style.background = score >= 70 ? 'var(--red)' : score >= 40 ? 'var(--amber)' : 'var(--green)';
+  bar.style.background = score >= 70 ? 'var(--pink)' : score >= 40 ? 'var(--orange)' : 'var(--mint)';
+  // 右侧风险环同步：conic-gradient 直接算角度，不必再走 CSS 变量
+  const ring = $('mRing');
+  if (ring) {
+    const tone = score >= 70 ? 'var(--pink)' : score >= 40 ? 'var(--orange)' : 'var(--mint)';
+    ring.style.background = `conic-gradient(${tone} ${Math.min(score, 100)}%, #fff 0)`;
+  }
   $('mStage').textContent = session.stage.name;
 }
 
@@ -4019,8 +4444,8 @@ function finish() {
     <div style="margin-top:14px"><button class="primary" id="againBtn">换个剧本再来一次</button></div>
     </div>`;
   $('againBtn').onclick = () => {
-    $('picker').style.display = ''; $('monitor').style.display = 'none';
-    $('reportBox').style.display = 'none'; renderCards();
+    $('monitor').style.display = 'none';
+    $('reportBox').style.display = 'none'; syncScn();
   };
 }
 
@@ -4031,7 +4456,7 @@ $('backBtn').onclick = () => show('v-list');
 $('blockBtn').onclick = () => { $('userInput').value = '我要拉黑你并报警'; send(); };
 $('userInput').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
 $('app-wechat').onclick = () => {
-  if (!session) { $('homeHint').textContent = '请先在右侧选择剧本并点「生成微信好友」。'; return; }
+  if (!session) { $('homeHint').textContent = '请先在下方选择剧本并点「生成微信好友」。'; return; }
   show('v-list');
 };
 /* ══════════════════════════════════════════════════════════════
@@ -4201,11 +4626,11 @@ function anaRenderResult(r) {
   const advice = r.advice;
 
   const sigHtml = sigs.length
-    ? sigs.map((s) => `
+    ? sigs.map((s, i) => `
       <div class="sigrow">
         <div class="ic">${s.icon}</div>
         <div class="bd">
-          <div class="nm">${s.label}${s.fromAI ? '<span class="chip">AI 补充</span>' : ''}</div>
+          <div class="nm"><span class="idx">${i + 1}</span>${s.label}${s.fromAI ? '<span class="chip ai">AI 补充</span>' : ''}</div>
           <div class="ds">${s.detail}</div>
           ${s.evidence ? `<div class="ev">原文线索：${escapeHtml(s.evidence)}</div>` : ''}
         </div>
@@ -4254,6 +4679,7 @@ function anaRenderResult(r) {
         <span class="sub">${escapeHtml(r.source.name)} · ${r.source.kind === 'image'
           ? '图片' + (r.source.chars ? `（另附 ${r.source.chars} 字文字）` : '')
           : `文本 ${r.source.chars} 字`}</span>
+        <span class="lvl" style="background:${r.level.color}">${r.level.label}</span>
       </div>
       <p class="desc">${v.desc}。<b>判断依据：</b>${escapeHtml(r.summary || '—')}</p>
       <div class="kv" style="margin-top:12px"><span>风险等级</span>
@@ -4369,7 +4795,6 @@ function escapeHtml(s) {
 
 $('anaSpec').innerHTML = anaSpecText();
 anaRenderEngine();
-$('anaBack').onclick = () => goto('s-home');
 
 /**
  * 「测试视觉」：用一张 1×1 的测试图问模型「这是什么颜色」，
@@ -4405,9 +4830,20 @@ $('anaAiVision').onclick = async () => {
   }
 };
 
-renderCards();
+renderScnStrip();
 renderHeroStats();
 $('clock').textContent = now();
+
+/* 视口宽度变化 → 卡片带宽度与卡宽都变，重算留白并把选中剧本重新居中 */
+let scnResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(scnResizeTimer);
+  scnResizeTimer = setTimeout(() => {
+    applyScnPad();
+    const track = $('scnTrack');
+    if (track && track.offsetParent !== null) centerScnSelected();
+  }, 120);
+});
 </script>
 </body>
 </html>
